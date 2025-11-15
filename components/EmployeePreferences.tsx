@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { ApiService } from '@/lib/api'
 import { EmployeePreference, Employee } from '@/types'
 
@@ -17,11 +17,7 @@ export default function EmployeePreferences({ employee, allEmployees, onClose }:
   const [selectedEmployeeId, setSelectedEmployeeId] = useState('')
   const [weight, setWeight] = useState(1.5)
 
-  useEffect(() => {
-    loadPreferences()
-  }, [employee.id])
-
-  const loadPreferences = async () => {
+  const loadPreferences = useCallback(async () => {
     try {
       setLoading(true)
       const data = await ApiService.getEmployeePreferences(employee.id)
@@ -32,7 +28,11 @@ export default function EmployeePreferences({ employee, allEmployees, onClose }:
     } finally {
       setLoading(false)
     }
-  }
+  }, [employee.id])
+
+  useEffect(() => {
+    loadPreferences()
+  }, [loadPreferences])
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -150,7 +150,7 @@ export default function EmployeePreferences({ employee, allEmployees, onClose }:
                 <span>2.0 (Forte)</span>
               </div>
               <p className="mt-2 text-xs text-gray-500">
-                Il peso determina quanto l'algoritmo preferisce assegnare questo dipendente insieme.
+                Il peso determina quanto l&apos;algoritmo preferisce assegnare questo dipendente insieme.
                 Valore più alto = preferenza più forte.
               </p>
             </div>

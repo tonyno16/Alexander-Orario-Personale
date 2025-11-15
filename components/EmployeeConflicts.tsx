@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { ApiService } from '@/lib/api'
 import { EmployeeConflict, Employee } from '@/types'
 
@@ -17,11 +17,7 @@ export default function EmployeeConflicts({ employee, allEmployees, onClose }: E
   const [selectedEmployeeId, setSelectedEmployeeId] = useState('')
   const [reason, setReason] = useState('')
 
-  useEffect(() => {
-    loadConflicts()
-  }, [employee.id])
-
-  const loadConflicts = async () => {
+  const loadConflicts = useCallback(async () => {
     try {
       setLoading(true)
       const data = await ApiService.getEmployeeConflicts(employee.id)
@@ -32,7 +28,11 @@ export default function EmployeeConflicts({ employee, allEmployees, onClose }: E
     } finally {
       setLoading(false)
     }
-  }
+  }, [employee.id])
+
+  useEffect(() => {
+    loadConflicts()
+  }, [loadConflicts])
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault()
