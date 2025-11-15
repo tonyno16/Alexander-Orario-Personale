@@ -17,6 +17,7 @@
 **Framework Preset:** Next.js (dovrebbe essere rilevato automaticamente)
 
 **Build Settings:**
+
 - Build Command: `npm run build` (default)
 - Output Directory: `.next` (default)
 - Install Command: `npm install` (default)
@@ -28,7 +29,8 @@ Nella sezione "Environment Variables", aggiungi:
 **Nome:** `DATABASE_URL`  
 **Valore:** La connection string completa da Supabase Dashboard
 
-⚠️ **IMPORTANTE:** 
+⚠️ **IMPORTANTE:**
+
 1. Vai su Supabase Dashboard → Settings → Database
 2. Trova "Connection string" → Seleziona **URI** (non Session o Transaction)
 3. Copia la connection string completa
@@ -38,6 +40,7 @@ Nella sezione "Environment Variables", aggiungi:
 **Environment:** Seleziona tutte le opzioni (Production, Preview, Development)
 
 **Verifica:**
+
 - La connection string deve iniziare con `postgresql://`
 - Deve contenere la password del database
 - Deve usare la porta `5432`
@@ -67,6 +70,7 @@ Dopo il primo deploy, devi applicare lo schema Prisma al database Supabase.
 **Opzione B - Via Vercel Build Command:**
 
 Modifica il Build Command in Vercel per includere:
+
 ```
 npm install && npx prisma generate && npx prisma db push && npm run build
 ```
@@ -76,6 +80,7 @@ npm install && npx prisma generate && npx prisma db push && npm run build
 **Opzione C - Via CLI Locale:**
 
 Se riesci a connetterti localmente:
+
 ```bash
 # Con DATABASE_URL di Supabase nel tuo .env
 npm run db:push
@@ -115,6 +120,7 @@ Dopo il deploy, verifica:
 Dopo il setup iniziale, ogni push al branch `main` triggererà automaticamente un nuovo deploy.
 
 Per cambiare il branch di deploy:
+
 - Vai su Vercel Dashboard → Project Settings → Git
 - Seleziona il branch desiderato
 
@@ -123,4 +129,3 @@ Per cambiare il branch di deploy:
 1. Vai su Vercel Dashboard → Project Settings → Domains
 2. Aggiungi il tuo dominio
 3. Segui le istruzioni per configurare DNS
-

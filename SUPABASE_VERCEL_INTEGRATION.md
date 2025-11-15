@@ -47,6 +47,7 @@ L'integrazione aggiungerà automaticamente queste variabili d'ambiente:
 Il file `lib/prisma.ts` è già stato aggiornato per usare automaticamente `POSTGRES_PRISMA_URL` se disponibile, altrimenti usa le altre variabili come fallback.
 
 **Non devi modificare nulla nel codice.** Il codice proverà automaticamente nell'ordine:
+
 1. `POSTGRES_PRISMA_URL` (da integrazione Supabase-Vercel) ⭐
 2. `POSTGRES_URL_NON_POOLING` (connection diretta)
 3. `POSTGRES_URL` (connection pooling)
@@ -57,6 +58,7 @@ Il file `lib/prisma.ts` è già stato aggiornato per usare automaticamente `POST
 Dopo aver installato l'integrazione, verifica solo che:
 
 1. **Le variabili d'ambiente siano presenti** in Vercel:
+
    - Vai su Settings → Environment Variables
    - Verifica che `POSTGRES_PRISMA_URL` sia presente
    - Se non c'è, l'integrazione non è stata installata correttamente
@@ -112,4 +114,3 @@ Dopo il redeploy:
 
 - [Documentazione Integrazione Supabase-Vercel](https://supabase.com/partners/integrations/vercel)
 - [Vercel Integration Docs](https://vercel.com/docs/integrations)
-

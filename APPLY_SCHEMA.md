@@ -5,14 +5,17 @@ Dopo che Vercel ha deployato con successo l'applicazione, devi applicare lo sche
 ## Metodo 1: Via Supabase SQL Editor (Consigliato)
 
 1. **Vai su Supabase Dashboard:**
+
    - Apri [supabase.com](https://supabase.com)
    - Accedi al tuo progetto
 
 2. **Apri SQL Editor:**
+
    - Nel menu laterale, clicca su "SQL Editor"
    - Clicca su "New query"
 
 3. **Esegui lo Schema:**
+
    - Copia il contenuto del file `supabase-schema.sql`
    - Incollalo nell'editor SQL
    - Clicca su "Run" (o premi Ctrl+Enter)
@@ -30,16 +33,18 @@ Dopo che Vercel ha deployato con successo l'applicazione, devi applicare lo sche
 Se riesci a connetterti localmente al database Supabase:
 
 1. **Configura DATABASE_URL:**
+
    ```bash
    # Crea file .env.production con la connection string di Supabase
    echo 'DATABASE_URL="postgresql://postgres:[PASSWORD]@[HOST]:5432/postgres"' > .env.production
    ```
 
 2. **Applica Schema:**
+
    ```bash
    # Genera Prisma Client
    npm run db:generate
-   
+
    # Applica schema al database Supabase
    npm run db:push
    ```
@@ -64,6 +69,7 @@ Puoi modificare il Build Command in Vercel per applicare automaticamente lo sche
 Supabase richiede che RLS sia abilitato sulle tabelle pubbliche. Dopo aver applicato lo schema principale:
 
 1. **Esegui lo script RLS:**
+
    - Nel SQL Editor, esegui anche il contenuto di `supabase-rls-policies.sql`
    - Oppure usa lo script completo `supabase-schema.sql` che include già RLS
 
@@ -78,6 +84,7 @@ Supabase richiede che RLS sia abilitato sulle tabelle pubbliche. Dopo aver appli
 Dopo aver applicato lo schema, verifica che tutto sia corretto:
 
 1. **Via Supabase Dashboard:**
+
    - Vai su "Table Editor"
    - Verifica che tutte le 4 tabelle esistano
    - Controlla che gli indici siano creati
@@ -90,14 +97,17 @@ Dopo aver applicato lo schema, verifica che tutto sia corretto:
 ## Troubleshooting
 
 ### Errore "relation already exists"
+
 - Le tabelle esistono già
 - Puoi ignorare l'errore o eliminare le tabelle esistenti prima di riapplicare
 
 ### Errore di permessi
+
 - Verifica che la connection string abbia i permessi corretti
 - Assicurati di usare l'utente `postgres` con la password corretta
 
 ### Schema non applicato
+
 - Verifica che la connection string sia corretta
 - Controlla i logs in Supabase Dashboard → Logs → Postgres Logs
 
@@ -109,4 +119,3 @@ Dopo aver applicato lo schema:
 2. ✅ Testa tutte le funzionalità (CRUD dipendenti, requisiti, generazione turni)
 3. ✅ Verifica che i dati persistano correttamente
 4. ✅ (Opzionale) Configura backup automatico in Supabase
-
