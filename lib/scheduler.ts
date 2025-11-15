@@ -131,6 +131,12 @@ export class SchedulerService {
         continue
       }
 
+      // Verifica che il dipendente sia disponibile in questo giorno specifico
+      // Se availableDays è vuoto, il dipendente è disponibile tutti i giorni
+      if (emp.availableDays && emp.availableDays.length > 0 && !emp.availableDays.includes(day)) {
+        continue
+      }
+
       // Verifica che il dipendente abbia ancora disponibilità
       if (empAvail.remainingAvailability <= 0) continue
 

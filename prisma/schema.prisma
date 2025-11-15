@@ -8,13 +8,14 @@ datasource db {
 }
 
 model Employee {
-  id          String   @id @default(cuid())
-  name        String
-  role        String   // 'cuoco' | 'aiuto_cuoco' | 'pizzaiolo' | 'lavapiatti' | 'cameriere' | 'aiuto_cameriere'
-  availability Int     // giorni disponibili a settimana
-  restaurants  String[] // array di ID ristoranti (vuoto = tutti)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id            String   @id @default(cuid())
+  name          String
+  role          String   // 'cuoco' | 'aiuto_cuoco' | 'pizzaiolo' | 'lavapiatti' | 'cameriere' | 'aiuto_cameriere'
+  availability  Int      // giorni disponibili a settimana (mantenuto per retrocompatibilità, calcolato da availableDays)
+  availableDays String[] // array di giorni disponibili: ['lunedi', 'martedi', ...] (vuoto = tutti i giorni)
+  restaurants   String[] // array di ID ristoranti (vuoto = tutti)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   assignments ShiftAssignment[]
 

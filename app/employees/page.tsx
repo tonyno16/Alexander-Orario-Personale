@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { ApiService } from '@/lib/api'
-import { Employee, EmployeeRole } from '@/types'
+import { Employee, EmployeeRole, DayOfWeek } from '@/types'
+import WeekCalendar from '@/components/WeekCalendar'
 
 const ROLES: EmployeeRole[] = [
   'cuoco',
@@ -21,6 +22,7 @@ export default function EmployeesPage() {
     name: '',
     role: 'cuoco' as EmployeeRole,
     availability: 5,
+    availableDays: [] as DayOfWeek[],
     restaurants: [] as string[],
   })
   const [restaurants, setRestaurants] = useState<{ id: string; name: string }[]>([])
@@ -67,6 +69,7 @@ export default function EmployeesPage() {
       name: employee.name,
       role: employee.role,
       availability: employee.availability,
+      availableDays: employee.availableDays || [],
       restaurants: employee.restaurants || [],
     })
   }
@@ -87,7 +90,19 @@ export default function EmployeesPage() {
       name: '',
       role: 'cuoco',
       availability: 5,
+      availableDays: [],
       restaurants: [],
+    })
+  }
+
+  const handleAvailableDaysChange = (days: DayOfWeek[]) => {
+    // Calcola availability dal numero di giorni selezionati
+    // Se nessun giorno è selezionato, disponibilità = 7 (tutti i giorni)
+    const calculatedAvailability = days.length === 0 ? 7 : days.length
+    setFormData({
+      ...formData,
+      availableDays: days,
+      availability: calculatedAvailability,
     })
   }
 
@@ -144,18 +159,13 @@ export default function EmployeesPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Disponibilità (giorni a settimana)
-            </label>
-            <input
-              type="number"
-              min="0"
-              max="7"
-              required
-              value={formData.availability}
-              onChange={e => setFormData({ ...formData, availability: parseInt(e.target.value) })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            <WeekCalendar
+              selectedDays={formData.availableDays}
+              onChange={handleAvailableDaysChange}
             />
+            <p className="mt-2 text-xs text-gray-500">
+              Disponibilità totale: {formData.availableDays.length === 0 ? '7' : formData.availableDays.length} giorni/settimana
+            </p>
           </div>
 
           <div>
@@ -215,6 +225,9 @@ export default function EmployeesPage() {
                   Disponibilità
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Giorni
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Ristoranti
                 </th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -232,7 +245,23 @@ export default function EmployeesPage() {
                     {emp.role.replace('_', ' ')}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {emp.availability} giorni/settimana
+                    {emp.availableDays && emp.availableDays.length > 0 
+                      ? `${emp.availableDays.length} giorni/settimana`
+                      : `${emp.availability} giorni/settimana`
+                    }
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {emp.availableDays && emp.availableDays.length > 0 ? (
+                      <div className="flex flex-wrap gap-1">
+                        {emp.availableDays.map(day => (
+                          <span key={day} className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+                            {day.substring(0, 3)}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="text-gray-400 italic">Tutti i giorni</span>
+                    )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {emp.restaurants.length === 0 ? 'Tutti' : `${emp.restaurants.length} specifici`}

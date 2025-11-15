@@ -20,7 +20,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { name, role, availability, restaurants } = body
+    const { name, role, availability, availableDays, restaurants } = body
 
     // Validazione
     if (!name || !role || availability === undefined) {
@@ -52,11 +52,17 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Calcola availability da availableDays se disponibile
+    const calculatedAvailability = availableDays && availableDays.length > 0 
+      ? availableDays.length 
+      : availability
+
     const employee = await prisma.employee.create({
       data: {
         name,
         role,
-        availability,
+        availability: calculatedAvailability,
+        availableDays: availableDays || [],
         restaurants: restaurants || [],
       },
     })

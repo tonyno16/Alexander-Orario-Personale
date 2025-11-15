@@ -21,7 +21,8 @@ export interface Employee {
   id: string
   name: string
   role: EmployeeRole
-  availability: number // Giorni disponibili a settimana
+  availability: number // Giorni disponibili a settimana (calcolato da availableDays per retrocompatibilità)
+  availableDays: DayOfWeek[] // Giorni specifici disponibili (vuoto = tutti i giorni)
   restaurants: string[] // ID ristoranti (vuoto = tutti)
   createdAt?: Date
   updatedAt?: Date

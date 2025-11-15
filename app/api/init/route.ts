@@ -20,13 +20,14 @@ export async function POST() {
       prisma.restaurant.create({ data: { name: 'Ristorante D' } }),
     ])
 
-    // Crea 6 dipendenti di esempio
+    // Crea 6 dipendenti di esempio con giorni disponibili
     const employees = await Promise.all([
       prisma.employee.create({
         data: {
           name: 'Mario Rossi',
           role: 'cuoco',
           availability: 5,
+          availableDays: ['lunedi', 'martedi', 'mercoledi', 'giovedi', 'venerdi'],
           restaurants: [],
         },
       }),
@@ -35,6 +36,7 @@ export async function POST() {
           name: 'Luigi Bianchi',
           role: 'aiuto_cuoco',
           availability: 4,
+          availableDays: ['lunedi', 'martedi', 'mercoledi', 'giovedi'],
           restaurants: [],
         },
       }),
@@ -43,6 +45,7 @@ export async function POST() {
           name: 'Giuseppe Verdi',
           role: 'pizzaiolo',
           availability: 6,
+          availableDays: ['lunedi', 'martedi', 'mercoledi', 'giovedi', 'venerdi', 'sabato'],
           restaurants: [],
         },
       }),
@@ -51,6 +54,7 @@ export async function POST() {
           name: 'Anna Neri',
           role: 'cameriere',
           availability: 5,
+          availableDays: ['lunedi', 'martedi', 'mercoledi', 'giovedi', 'venerdi'],
           restaurants: [],
         },
       }),
@@ -59,6 +63,7 @@ export async function POST() {
           name: 'Paolo Blu',
           role: 'lavapiatti',
           availability: 4,
+          availableDays: ['martedi', 'mercoledi', 'giovedi', 'venerdi'],
           restaurants: [],
         },
       }),
@@ -67,6 +72,7 @@ export async function POST() {
           name: 'Sofia Gialli',
           role: 'aiuto_cameriere',
           availability: 5,
+          availableDays: [], // Disponibile tutti i giorni
           restaurants: [],
         },
       }),

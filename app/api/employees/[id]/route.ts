@@ -34,7 +34,7 @@ export async function PUT(
 ) {
   try {
     const body = await request.json()
-    const { name, role, availability, restaurants } = body
+    const { name, role, availability, availableDays, restaurants } = body
 
     // Validazione
     if (role) {
@@ -61,12 +61,18 @@ export async function PUT(
       )
     }
 
+    // Calcola availability da availableDays se disponibile
+    const calculatedAvailability = availableDays !== undefined && availableDays.length > 0 
+      ? availableDays.length 
+      : availability
+
     const employee = await prisma.employee.update({
       where: { id: params.id },
       data: {
         ...(name && { name }),
         ...(role && { role }),
-        ...(availability !== undefined && { availability }),
+        ...(calculatedAvailability !== undefined && { availability: calculatedAvailability }),
+        ...(availableDays !== undefined && { availableDays }),
         ...(restaurants !== undefined && { restaurants }),
       },
     })
