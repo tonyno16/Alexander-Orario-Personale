@@ -15,6 +15,27 @@ export default function Home() {
   const [restaurants, setRestaurants] = useState<Restaurant[]>([])
   const [requirements, setRequirements] = useState<ShiftRequirement[]>([])
 
+  const initializeDatabase = useCallback(async () => {
+    try {
+      setInitializing(true)
+      await ApiService.initializeDatabase()
+      // Ricarica i dati dopo l'inizializzazione
+      const [emps, rests, reqs] = await Promise.all([
+        ApiService.getEmployees(),
+        ApiService.getRestaurants(),
+        ApiService.getRequirements(),
+      ])
+      setEmployees(emps)
+      setRestaurants(rests)
+      setRequirements(reqs)
+    } catch (error) {
+      console.error('Error initializing database:', error)
+      alert('Errore durante l\'inizializzazione del database')
+    } finally {
+      setInitializing(false)
+    }
+  }, [])
+
   const loadData = useCallback(async () => {
     try {
       setLoading(true)
@@ -36,24 +57,32 @@ export default function Home() {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [initializeDatabase])
 
-  useEffect(() => {
-    loadData()
-  }, [loadData])
-
-  const initializeDatabase = async () => {
+  const initializeDatabase = useCallback(async () => {
     try {
       setInitializing(true)
       await ApiService.initializeDatabase()
-      await loadData()
+      // Ricarica i dati dopo l'inizializzazione
+      const [emps, rests, reqs] = await Promise.all([
+        ApiService.getEmployees(),
+        ApiService.getRestaurants(),
+        ApiService.getRequirements(),
+      ])
+      setEmployees(emps)
+      setRestaurants(rests)
+      setRequirements(reqs)
     } catch (error) {
       console.error('Error initializing database:', error)
       alert('Errore durante l\'inizializzazione del database')
     } finally {
       setInitializing(false)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    loadData()
+  }, [loadData])
 
   const generateSchedule = async () => {
     try {

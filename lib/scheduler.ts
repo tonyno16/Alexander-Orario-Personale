@@ -68,7 +68,8 @@ export class SchedulerService {
               day,
               shift,
               role,
-              assignments
+              assignments,
+              weekStart
             )
 
             // Ordina per disponibilità rimanente (meno disponibilità = priorità)
@@ -116,7 +117,8 @@ export class SchedulerService {
     day: DayOfWeek,
     shift: Shift,
     role: EmployeeRole,
-    existingAssignments: ShiftAssignment[]
+    existingAssignments: ShiftAssignment[],
+    weekStart: string
   ): EmployeeAvailability[] {
     const available: EmployeeAvailability[] = []
 
