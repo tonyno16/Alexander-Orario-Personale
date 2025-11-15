@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { ApiService } from '@/lib/api'
 import { SchedulerService } from '@/lib/scheduler'
 import { ShiftAssignment, Restaurant, Employee, DayOfWeek, Shift } from '@/types'
@@ -25,11 +25,7 @@ export default function SchedulePage() {
   const [weekStart, setWeekStart] = useState(SchedulerService.getWeekStart())
   const [generating, setGenerating] = useState(false)
 
-  useEffect(() => {
-    loadData()
-  }, [weekStart])
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true)
       const [sched, rests, emps] = await Promise.all([
@@ -45,7 +41,11 @@ export default function SchedulePage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [weekStart])
+
+  useEffect(() => {
+    loadData()
+  }, [loadData])
 
   const handleGenerate = async () => {
     try {

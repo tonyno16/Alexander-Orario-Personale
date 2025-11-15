@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { Prisma } from '@prisma/client'
 import { DayOfWeek, Shift, RoleRequirement } from '@/types'
 
 const validDays: DayOfWeek[] = [
@@ -89,13 +90,13 @@ export async function POST(request: NextRequest) {
         },
       },
       update: {
-        requirements: requirements as RoleRequirement[],
+        requirements: requirements as Prisma.InputJsonValue,
       },
       create: {
         restaurantId,
         day,
         shift,
-        requirements: requirements as RoleRequirement[],
+        requirements: requirements as Prisma.InputJsonValue,
       },
     })
 

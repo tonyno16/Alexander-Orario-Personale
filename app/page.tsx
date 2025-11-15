@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { ApiService } from '@/lib/api'
 import { SchedulerService } from '@/lib/scheduler'
@@ -15,11 +15,7 @@ export default function Home() {
   const [restaurants, setRestaurants] = useState<Restaurant[]>([])
   const [requirements, setRequirements] = useState<ShiftRequirement[]>([])
 
-  useEffect(() => {
-    loadData()
-  }, [])
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true)
       const [emps, rests, reqs] = await Promise.all([
@@ -40,7 +36,11 @@ export default function Home() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    loadData()
+  }, [loadData])
 
   const initializeDatabase = async () => {
     try {
