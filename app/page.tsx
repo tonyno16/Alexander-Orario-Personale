@@ -67,7 +67,7 @@ export default function Home() {
     try {
       setGenerating(true)
       const weekStart = SchedulerService.getWeekStart()
-      const assignments = SchedulerService.generateSchedule(
+      const assignments = await SchedulerService.generateSchedule(
         employees,
         restaurants,
         requirements,

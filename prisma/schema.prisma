@@ -8,60 +8,102 @@ datasource db {
 }
 
 model Employee {
-  id            String   @id @default(cuid())
-  name          String
-  role          String   // 'cuoco' | 'aiuto_cuoco' | 'pizzaiolo' | 'lavapiatti' | 'cameriere' | 'aiuto_cameriere'
-  availability  Int      // giorni disponibili a settimana (mantenuto per retrocompatibilità, calcolato da availableDays)
-  availableDays String[] // array di giorni disponibili: ['lunedi', 'martedi', ...] (vuoto = tutti i giorni)
+  id             String   @id @default(cuid())
+  name           String
+  role           String // 'cuoco' | 'aiuto_cuoco' | 'pizzaiolo' | 'lavapiatti' | 'cameriere' | 'aiuto_cameriere'
+  availability   Int // giorni disponibili a settimana (mantenuto per retrocompatibilità, calcolato da availableDays)
+  availableDays  String[] // array di giorni disponibili: ['lunedi', 'martedi', ...] (vuoto = tutti i giorni)
   availableDates String[] // array di date specifiche disponibili: ['2024-11-15', '2024-11-16', ...] (formato YYYY-MM-DD)
-  restaurants   String[] // array di ID ristoranti (vuoto = tutti)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  restaurants    String[] // array di ID ristoranti (vuoto = tutti)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
-  assignments ShiftAssignment[]
+  assignments  ShiftAssignment[]
+  conflicts1   EmployeeConflict[]   @relation("EmployeeConflicts1")
+  conflicts2   EmployeeConflict[]   @relation("EmployeeConflicts2")
+  preferences1 EmployeePreference[] @relation("EmployeePreferences1")
+  preferences2 EmployeePreference[] @relation("EmployeePreferences2")
 
   @@index([role])
 }
 
 model Restaurant {
-  id          String   @id @default(cuid())
-  name        String   @unique
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   requirements ShiftRequirement[]
   assignments  ShiftAssignment[]
 }
 
 model ShiftRequirement {
-  id           String   @id @default(cuid())
+  id           String     @id @default(cuid())
   restaurantId String
   restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
-  day          String   // 'lunedi' | 'martedi' | 'mercoledi' | 'giovedi' | 'venerdi' | 'sabato' | 'domenica'
-  shift        String   // 'pranzo' | 'cena'
-  requirements Json     // Array di { role: string, count: number }
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  day          String // 'lunedi' | 'martedi' | 'mercoledi' | 'giovedi' | 'venerdi' | 'sabato' | 'domenica'
+  shift        String // 'pranzo' | 'cena'
+  requirements Json // Array di { role: string, count: number }
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
 
   @@unique([restaurantId, day, shift])
   @@index([restaurantId])
 }
 
 model ShiftAssignment {
-  id           String   @id @default(cuid())
+  id           String     @id @default(cuid())
   restaurantId String
   restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
   employeeId   String
-  employee     Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
-  day          String   // 'lunedi' | 'martedi' | 'mercoledi' | 'giovedi' | 'venerdi' | 'sabato' | 'domenica'
-  shift        String   // 'pranzo' | 'cena'
-  role         String   // ruolo del dipendente per questo turno
-  weekStart    String   // data inizio settimana (YYYY-MM-DD)
-  createdAt    DateTime @default(now())
+  employee     Employee   @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  day          String // 'lunedi' | 'martedi' | 'mercoledi' | 'giovedi' | 'venerdi' | 'sabato' | 'domenica'
+  shift        String // 'pranzo' | 'cena'
+  role         String // ruolo del dipendente per questo turno
+  weekStart    String // data inizio settimana (YYYY-MM-DD)
+  createdAt    DateTime   @default(now())
 
+  @@unique([restaurantId, day, shift, employeeId, weekStart])
   @@index([restaurantId, day, shift])
   @@index([employeeId])
   @@index([weekStart])
-  @@unique([restaurantId, day, shift, employeeId, weekStart])
 }
 
+model EmployeeConflict {
+  id          String   @id @default(cuid())
+  employeeId1 String // Primo dipendente
+  employee1   Employee @relation("EmployeeConflicts1", fields: [employeeId1], references: [id], onDelete: Cascade)
+  employeeId2 String // Secondo dipendente
+  employee2   Employee @relation("EmployeeConflicts2", fields: [employeeId2], references: [id], onDelete: Cascade)
+  reason      String? // Motivo opzionale del conflitto
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([employeeId1, employeeId2])
+  @@index([employeeId1])
+  @@index([employeeId2])
+}
+
+model EmployeePreference {
+  id          String   @id @default(cuid())
+  employeeId1 String // Primo dipendente
+  employee1   Employee @relation("EmployeePreferences1", fields: [employeeId1], references: [id], onDelete: Cascade)
+  employeeId2 String // Secondo dipendente
+  employee2   Employee @relation("EmployeePreferences2", fields: [employeeId2], references: [id], onDelete: Cascade)
+  weight      Float    @default(1.0) // Peso della preferenza (1.0 = normale, >1.0 = forte preferenza)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([employeeId1, employeeId2])
+  @@index([employeeId1])
+  @@index([employeeId2])
+}
+
+model SchedulingParameter {
+  id          String   @id @default(cuid())
+  key         String   @unique // Es: "max_different_coworkers_per_week"
+  value       Json // Valore del parametro (può essere number, boolean, string, etc.)
+  description String? // Descrizione del parametro
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}

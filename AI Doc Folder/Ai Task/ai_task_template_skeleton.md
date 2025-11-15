@@ -81,7 +81,8 @@ Il progetto è un sistema MVP funzionante per la gestione dei turni del personal
 **Cosa Manca/da Migliorare:**
 
 - ⚠️ Autenticazione utente
-- ⚠️ Algoritmo di assegnazione può essere migliorato per casi complessi
+- ✅ Algoritmo di assegnazione migliorato per casi complessi (completato: backtracking, ricerca locale, riassegnazione intelligente)
+- 🔄 **Gestione conflitti tra dipendenti e parametri personalizzabili** (in sviluppo)
 - ⚠️ Gestione ferie e permessi
 - ⚠️ Notifiche ai dipendenti
 - ⚠️ Statistiche e report avanzati
@@ -751,6 +752,443 @@ alexander-turni/
 This template gives you the framework - now fill it out with your specific project details!
 
 _Want the complete version with detailed examples, advanced strategies, and full AI agent workflows? [Watch the full tutorial video here]_
+
+---
+
+## 14. Task: Gestione Conflitti Dipendenti e Parametri Personalizzabili
+
+### Task Title
+
+**Title:** Gestione Conflitti tra Dipendenti e Parametri Personalizzabili nell'Algoritmo di Assegnazione
+
+### Goal Statement
+
+**Goal:** Estendere l'algoritmo di assegnazione turni per supportare la gestione di conflitti tra dipendenti (evitare di assegnare insieme persone che non lavorano bene insieme) e altri parametri personalizzabili che permettano un controllo più granulare sulla generazione dei turni. Questo migliorerà la qualità della soluzione e permetterà di gestire situazioni reali dove alcuni dipendenti non possono o non devono lavorare insieme.
+
+---
+
+## 15. Context & Problem Definition
+
+### Problem Statement
+
+Attualmente l'algoritmo di assegnazione considera solo:
+
+- Disponibilità dei dipendenti
+- Ruoli richiesti
+- Bilanciamento del carico di lavoro
+- Continuità ristorante (opzionale)
+
+**Problema:** In contesti reali, ci sono spesso situazioni dove:
+
+- Alcuni dipendenti non possono lavorare insieme (conflitti personali, problemi di collaborazione)
+- Alcuni dipendenti lavorano meglio insieme (preferenze di team)
+- Potrebbero esserci altre regole personalizzate (es. evitare che un dipendente lavori con più di X persone diverse nella stessa settimana)
+
+**Impatto:** Senza questa funzionalità, l'algoritmo potrebbe generare turni che, pur tecnicamente corretti, non sono praticabili o ottimali per l'ambiente di lavoro reale.
+
+### Success Criteria
+
+- [ ] Sistema permette di configurare conflitti tra dipendenti (coppie che non possono lavorare insieme)
+- [ ] Sistema permette di configurare preferenze tra dipendenti (coppie che lavorano bene insieme)
+- [ ] Algoritmo rispetta i conflitti durante l'assegnazione (non assegna dipendenti conflittuali allo stesso turno)
+- [ ] Algoritmo considera le preferenze come bonus nello scoring (preferisce assegnare dipendenti che lavorano bene insieme)
+- [ ] Interfaccia utente permette di gestire conflitti/preferenze per dipendente
+- [ ] Le regole sono configurabili e possono essere modificate senza impattare i dati esistenti
+- [ ] Performance dell'algoritmo rimane accettabile (< 2 secondi per 50+ dipendenti)
+
+---
+
+## 16. Technical Requirements
+
+### Functional Requirements
+
+**Requisiti Funzionali:**
+
+- User può configurare conflitti tra dipendenti (dipendente A non può lavorare con dipendente B)
+- User può configurare preferenze tra dipendenti (dipendente A lavora meglio con dipendente B)
+- User può visualizzare tutti i conflitti/preferenze configurati per un dipendente
+- User può rimuovere conflitti/preferenze esistenti
+- System automaticamente evita di assegnare dipendenti conflittuali allo stesso turno (stesso ristorante, giorno, turno)
+- System automaticamente preferisce assegnare dipendenti con preferenze configurate quando possibile
+- Quando non è possibile evitare un conflitto (caso complesso), system logga un warning ma completa l'assegnazione
+- System permette configurazione di altri parametri personalizzabili:
+  - Massimo numero di dipendenti diversi con cui un dipendente può lavorare nella stessa settimana
+  - Preferenza per mantenere team stabili tra settimane
+  - Regole per ruoli specifici (es. sempre assegnare X con Y quando entrambi disponibili)
+
+### Non-Functional Requirements
+
+- **Performance:**
+  - Verifica conflitti deve essere efficiente (O(1) lookup con Map)
+  - Algoritmo deve completarsi ancora in < 2 secondi anche con molti conflitti configurati
+- **Usability:**
+  - Interfaccia intuitiva per gestire conflitti/preferenze
+  - Visualizzazione chiara dei conflitti esistenti
+  - Feedback quando un conflitto impedisce un'assegnazione
+- **Data Integrity:**
+  - Conflitti/preferenze devono essere bidirezionali (se A conflitto con B, allora B conflitto con A)
+  - Validazione per evitare conflitti/preferenze con se stesso
+
+### Technical Constraints
+
+- Deve estendere `SchedulingOptions` esistente senza breaking changes
+- Deve usare Prisma ORM per persistenza conflitti/preferenze
+- Deve mantenere retrocompatibilità: sistema funziona anche senza conflitti configurati
+- Deve integrare con algoritmo esistente (backtracking, ricerca locale)
+- Deve usare TypeScript types definiti in `types/index.ts`
+
+---
+
+## 17. Data & Database Changes
+
+### Database Schema Changes
+
+**Nuove Tabelle da Creare:**
+
+```prisma
+model EmployeeConflict {
+  id          String   @id @default(cuid())
+  employeeId1 String   // Primo dipendente
+  employee1   Employee @relation("EmployeeConflicts1", fields: [employeeId1], references: [id], onDelete: Cascade)
+  employeeId2 String   // Secondo dipendente
+  employee2   Employee @relation("EmployeeConflicts2", fields: [employeeId2], references: [id], onDelete: Cascade)
+  reason      String?  // Motivo opzionale del conflitto
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([employeeId1, employeeId2])
+  @@index([employeeId1])
+  @@index([employeeId2])
+}
+
+model EmployeePreference {
+  id          String   @id @default(cuid())
+  employeeId1 String   // Primo dipendente
+  employee1   Employee @relation("EmployeePreferences1", fields: [employeeId1], references: [id], onDelete: Cascade)
+  employeeId2 String   // Secondo dipendente
+  employee2   Employee @relation("EmployeePreferences2", fields: [employeeId2], references: [id], onDelete: Cascade)
+  weight      Float    @default(1.0) // Peso della preferenza (1.0 = normale, >1.0 = forte preferenza)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([employeeId1, employeeId2])
+  @@index([employeeId1])
+  @@index([employeeId2])
+}
+```
+
+**Modifiche al Model Employee:**
+
+```prisma
+model Employee {
+  // ... campi esistenti ...
+
+  conflicts1    EmployeeConflict[] @relation("EmployeeConflicts1")
+  conflicts2    EmployeeConflict[] @relation("EmployeeConflicts2")
+  preferences1  EmployeePreference[] @relation("EmployeePreferences1")
+  preferences2  EmployeePreference[] @relation("EmployeePreferences2")
+}
+```
+
+**Nuova Tabella per Parametri Globali (opzionale):**
+
+```prisma
+model SchedulingParameter {
+  id          String   @id @default(cuid())
+  key         String   @unique // Es: "max_different_coworkers_per_week"
+  value       Json     // Valore del parametro (può essere number, boolean, string, etc.)
+  description String?  // Descrizione del parametro
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+```
+
+### Data Model Updates
+
+**Nuovi Tipi TypeScript (`types/index.ts`):**
+
+```typescript
+export interface EmployeeConflict {
+  id: string;
+  employeeId1: string;
+  employeeId2: string;
+  reason?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export interface EmployeePreference {
+  id: string;
+  employeeId1: string;
+  employeeId2: string;
+  weight: number; // Default 1.0, >1.0 = preferenza forte
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export interface SchedulingParameter {
+  id: string;
+  key: string;
+  value: any; // Json value
+  description?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+// Estendere SchedulingOptions
+export interface SchedulingOptions {
+  // ... opzioni esistenti ...
+  avoidConflicts?: boolean; // Evita conflitti tra dipendenti (default: true)
+  considerPreferences?: boolean; // Considera preferenze nello scoring (default: true)
+  maxDifferentCoworkersPerWeek?: number; // Max dipendenti diversi per settimana (opzionale)
+  preferStableTeams?: boolean; // Preferisce mantenere team stabili (default: false)
+}
+```
+
+### Data Migration Plan
+
+1. **Backup:** Eseguire backup database prima di modifiche schema
+2. **Creare Migrazione Prisma:**
+   ```bash
+   npm run db:migrate -- --name add_employee_conflicts_preferences
+   ```
+3. **Validazione:** Verificare che dati esistenti siano preservati
+4. **Default Values:** Tutti i conflitti/preferenze iniziano vuoti (retrocompatibilità)
+
+---
+
+## 18. API & Backend Changes
+
+### New API Routes
+
+**Conflitti Dipendenti (`app/api/employees/[id]/conflicts/route.ts`):**
+
+- `GET /api/employees/[id]/conflicts` - Lista tutti i conflitti per un dipendente
+- `POST /api/employees/[id]/conflicts` - Aggiungi conflitto (body: `{ employeeId2: string, reason?: string }`)
+- `DELETE /api/employees/[id]/conflicts/[conflictId]` - Rimuovi conflitto
+
+**Preferenze Dipendenti (`app/api/employees/[id]/preferences/route.ts`):**
+
+- `GET /api/employees/[id]/preferences` - Lista tutte le preferenze per un dipendente
+- `POST /api/employees/[id]/preferences` - Aggiungi preferenza (body: `{ employeeId2: string, weight?: number }`)
+- `DELETE /api/employees/[id]/preferences/[preferenceId]` - Rimuovi preferenza
+
+**Parametri Scheduling (`app/api/scheduling-parameters/route.ts`):**
+
+- `GET /api/scheduling-parameters` - Lista tutti i parametri
+- `POST /api/scheduling-parameters` - Crea/aggiorna parametro (body: `{ key: string, value: any, description?: string }`)
+- `DELETE /api/scheduling-parameters/[key]` - Rimuovi parametro
+
+### Modifiche a SchedulerService
+
+**Modifiche a `lib/scheduler.ts`:**
+
+1. Aggiungere metodo per caricare conflitti/preferenze:
+
+   ```typescript
+   private static loadEmployeeConflicts(employeeIds: string[]): Map<string, Set<string>>
+   private static loadEmployeePreferences(employeeIds: string[]): Map<string, Map<string, number>>
+   ```
+
+2. Modificare `isEmployeeAvailable` per verificare conflitti:
+
+   ```typescript
+   private static hasConflict(
+     employeeId1: string,
+     employeeId2: string,
+     conflicts: Map<string, Set<string>>,
+     existingAssignments: ShiftAssignment[],
+     restaurantId: string,
+     day: DayOfWeek,
+     shift: Shift
+   ): boolean
+   ```
+
+3. Modificare `calculateEmployeeScore` per considerare preferenze:
+
+   ```typescript
+   // Bonus per preferenze
+   if (options.considerPreferences) {
+     const preferences = this.getPreferencesForEmployee(
+       emp.id,
+       restaurantId,
+       day,
+       shift,
+       existingAssignments,
+       preferencesMap
+     );
+     score += preferences * 10; // Bonus per preferenze
+   }
+   ```
+
+4. Modificare `isCombinationValid` per verificare conflitti nelle combinazioni
+
+---
+
+## 19. Frontend Changes
+
+### New Components
+
+**Componente Gestione Conflitti (`components/EmployeeConflicts.tsx`):**
+
+- Lista conflitti per un dipendente
+- Form per aggiungere nuovo conflitto (dropdown selezione altro dipendente)
+- Pulsante per rimuovere conflitto
+- Visualizzazione motivo conflitto (se presente)
+
+**Componente Gestione Preferenze (`components/EmployeePreferences.tsx`):**
+
+- Lista preferenze per un dipendente
+- Form per aggiungere nuova preferenza
+- Slider per peso preferenza (1.0 - 2.0)
+- Pulsante per rimuovere preferenza
+
+**Componente Parametri Scheduling (`components/SchedulingParameters.tsx`):**
+
+- Tabella con tutti i parametri configurabili
+- Form per modificare parametri
+- Tooltip con descrizioni parametri
+
+### Page Updates
+
+**Modifiche a `app/employees/[id]/page.tsx` (se esiste) o `app/employees/page.tsx`:**
+
+- Aggiungere tab/sezione "Conflitti" nella pagina dettaglio dipendente
+- Aggiungere tab/sezione "Preferenze" nella pagina dettaglio dipendente
+- Integrare componenti `EmployeeConflicts` e `EmployeePreferences`
+
+**Nuova Pagina `app/scheduling-parameters/page.tsx`:**
+
+- Pagina per gestire parametri globali di scheduling
+- Tabella parametri con possibilità di modifica
+- Form per aggiungere nuovi parametri personalizzati
+
+### State Management
+
+- Aggiungere state per conflitti/preferenze nella pagina dipendenti
+- Caricare conflitti/preferenze quando si carica un dipendente
+- Aggiornare UI dopo aggiunta/rimozione conflitto/preferenza
+
+---
+
+## 20. Implementation Plan
+
+**Fase 1: Database e Backend Base**
+
+- [ ] Task 1: Creare migrazione Prisma per tabelle EmployeeConflict e EmployeePreference
+  - File: `prisma/schema.prisma`
+  - Modifiche: Aggiungere modelli e relazioni
+- [ ] Task 2: Eseguire migrazione database
+  - Comando: `npm run db:migrate`
+- [ ] Task 3: Aggiornare types TypeScript
+  - File: `types/index.ts`
+  - Modifiche: Aggiungere interfacce EmployeeConflict, EmployeePreference, SchedulingParameter
+- [ ] Task 4: Creare API routes per conflitti
+  - File: `app/api/employees/[id]/conflicts/route.ts`
+  - Modifiche: Implementare GET, POST, DELETE
+- [ ] Task 5: Creare API routes per preferenze
+  - File: `app/api/employees/[id]/preferences/route.ts`
+  - Modifiche: Implementare GET, POST, DELETE
+
+**Fase 2: Integrazione Algoritmo**
+
+- [ ] Task 6: Aggiungere metodi per caricare conflitti/preferenze in SchedulerService
+  - File: `lib/scheduler.ts`
+  - Modifiche: Metodi `loadEmployeeConflicts`, `loadEmployeePreferences`
+- [ ] Task 7: Modificare `isEmployeeAvailable` per verificare conflitti
+  - File: `lib/scheduler.ts`
+  - Modifiche: Aggiungere verifica conflitti prima di assegnare
+- [ ] Task 8: Modificare `calculateEmployeeScore` per considerare preferenze
+  - File: `lib/scheduler.ts`
+  - Modifiche: Aggiungere bonus per preferenze nello scoring
+- [ ] Task 9: Modificare `isCombinationValid` per verificare conflitti nelle combinazioni
+  - File: `lib/scheduler.ts`
+  - Modifiche: Verificare che combinazione non contenga conflitti
+- [ ] Task 10: Aggiornare `generateSchedule` per caricare conflitti/preferenze
+  - File: `lib/scheduler.ts`
+  - Modifiche: Caricare dati all'inizio e passarli ai metodi
+
+**Fase 3: Frontend**
+
+- [ ] Task 11: Creare componente EmployeeConflicts
+  - File: `components/EmployeeConflicts.tsx`
+  - Modifiche: Componente completo con lista e form
+- [ ] Task 12: Creare componente EmployeePreferences
+  - File: `components/EmployeePreferences.tsx`
+  - Modifiche: Componente completo con lista e form
+- [ ] Task 13: Integrare componenti nella pagina dipendenti
+  - File: `app/employees/page.tsx` o nuova pagina dettaglio
+  - Modifiche: Aggiungere sezioni conflitti/preferenze
+- [ ] Task 14: Creare pagina parametri scheduling
+  - File: `app/scheduling-parameters/page.tsx`
+  - Modifiche: Pagina completa gestione parametri
+
+**Fase 4: Testing e Refinement**
+
+- [ ] Task 15: Test algoritmo con conflitti configurati
+- [ ] Task 16: Test algoritmo con preferenze configurate
+- [ ] Task 17: Test casi edge (molti conflitti, nessuna soluzione possibile)
+- [ ] Task 18: Verificare performance con molti conflitti/preferenze
+- [ ] Task 19: Aggiornare documentazione
+
+---
+
+## 21. Task Completion Tracking
+
+### Real-Time Progress Tracking
+
+**Tracking Progress:**
+
+- ✅ Task Overview e Goal Statement definiti
+- ✅ Problem Statement e Success Criteria definiti
+- ✅ Technical Requirements documentati
+- ✅ Database Schema Changes pianificati
+- ✅ API Routes pianificate
+- ✅ Frontend Components pianificati
+- ✅ Implementation Plan creato
+- ⏸️ Implementazione in attesa di avvio
+
+---
+
+## 22. Second-Order Impact Analysis
+
+### Impact Assessment
+
+**Aree di Preoccupazione:**
+
+1. **Performance:**
+
+   - Verifica conflitti deve essere efficiente (usare Map per O(1) lookup)
+   - Con molti conflitti, algoritmo potrebbe essere più lento
+   - Testare con scenari reali (10-20 conflitti per 50 dipendenti)
+
+2. **Complessità Algoritmo:**
+
+   - Aggiunta di vincoli potrebbe rendere alcuni casi impossibili
+   - Algoritmo deve gestire gracefully quando non trova soluzione
+   - Backtracking esistente dovrebbe aiutare
+
+3. **User Experience:**
+
+   - Interfaccia deve essere intuitiva per gestire conflitti
+   - Feedback chiaro quando conflitti impediscono assegnazioni
+   - Possibilità di vedere perché un turno non può essere generato
+
+4. **Data Integrity:**
+   - Conflitti devono essere bidirezionali automaticamente
+   - Validazione per evitare conflitti con se stesso
+   - Gestione quando un dipendente viene eliminato
+
+**Checklist Pre-Deploy:**
+
+- [ ] Testare con database vuoto (nessun conflitto)
+- [ ] Testare con alcuni conflitti configurati
+- [ ] Testare con molti conflitti (caso complesso)
+- [ ] Verificare che algoritmo completi in < 2 secondi
+- [ ] Verificare che conflitti siano rispettati
+- [ ] Verificare che preferenze migliorino lo scoring
+- [ ] Testare rimozione dipendente con conflitti/preferenze
+- [ ] Verificare retrocompatibilità (sistema funziona senza conflitti)
 
 ---
 

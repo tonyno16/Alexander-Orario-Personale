@@ -5,6 +5,8 @@ import { ApiService } from '@/lib/api'
 import { Employee, EmployeeRole, DayOfWeek } from '@/types'
 import WeekCalendar from '@/components/WeekCalendar'
 import MonthCalendar from '@/components/MonthCalendar'
+import EmployeeConflicts from '@/components/EmployeeConflicts'
+import EmployeePreferences from '@/components/EmployeePreferences'
 
 const ROLES: EmployeeRole[] = [
   'cuoco',
@@ -29,6 +31,8 @@ export default function EmployeesPage() {
   })
   const [showMonthCalendar, setShowMonthCalendar] = useState(false)
   const [restaurants, setRestaurants] = useState<{ id: string; name: string }[]>([])
+  const [showConflicts, setShowConflicts] = useState<Employee | null>(null)
+  const [showPreferences, setShowPreferences] = useState<Employee | null>(null)
 
   useEffect(() => {
     loadData()
@@ -304,18 +308,34 @@ export default function EmployeesPage() {
                     {emp.restaurants.length === 0 ? 'Tutti' : `${emp.restaurants.length} specifici`}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <button
-                      onClick={() => handleEdit(emp)}
-                      className="text-blue-600 hover:text-blue-900 mr-4"
-                    >
-                      Modifica
-                    </button>
-                    <button
-                      onClick={() => handleDelete(emp.id)}
-                      className="text-red-600 hover:text-red-900"
-                    >
-                      Elimina
-                    </button>
+                    <div className="flex items-center justify-end gap-2">
+                      <button
+                        onClick={() => handleEdit(emp)}
+                        className="text-blue-600 hover:text-blue-900"
+                      >
+                        Modifica
+                      </button>
+                      <button
+                        onClick={() => setShowConflicts(emp)}
+                        className="text-red-600 hover:text-red-900"
+                        title="Gestisci conflitti"
+                      >
+                        ⚠️ Conflitti
+                      </button>
+                      <button
+                        onClick={() => setShowPreferences(emp)}
+                        className="text-green-600 hover:text-green-900"
+                        title="Gestisci preferenze"
+                      >
+                        ✓ Preferenze
+                      </button>
+                      <button
+                        onClick={() => handleDelete(emp.id)}
+                        className="text-red-600 hover:text-red-900"
+                      >
+                        Elimina
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -328,6 +348,22 @@ export default function EmployeesPage() {
           )}
         </div>
       </div>
+
+      {/* Modals per conflitti e preferenze */}
+      {showConflicts && (
+        <EmployeeConflicts
+          employee={showConflicts}
+          allEmployees={employees}
+          onClose={() => setShowConflicts(null)}
+        />
+      )}
+      {showPreferences && (
+        <EmployeePreferences
+          employee={showPreferences}
+          allEmployees={employees}
+          onClose={() => setShowPreferences(null)}
+        />
+      )}
     </div>
   )
 }

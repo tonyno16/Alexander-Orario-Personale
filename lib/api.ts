@@ -1,4 +1,4 @@
-import { Employee, Restaurant, ShiftRequirement, ShiftAssignment } from '@/types'
+import { Employee, Restaurant, ShiftRequirement, ShiftAssignment, EmployeeConflict, EmployeePreference } from '@/types'
 
 const API_BASE = '/api'
 
@@ -150,6 +150,66 @@ export class ApiService {
         ? `${error.error}: ${error.details}` 
         : error.error || 'Failed to initialize database'
       throw new Error(errorMessage)
+    }
+  }
+
+  // Employee Conflicts
+  static async getEmployeeConflicts(employeeId: string): Promise<EmployeeConflict[]> {
+    const res = await fetch(`${API_BASE}/employees/${employeeId}/conflicts`)
+    if (!res.ok) throw new Error('Failed to fetch employee conflicts')
+    return res.json()
+  }
+
+  static async addEmployeeConflict(employeeId: string, conflict: { employeeId2: string; reason?: string }): Promise<EmployeeConflict> {
+    const res = await fetch(`${API_BASE}/employees/${employeeId}/conflicts`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(conflict),
+    })
+    if (!res.ok) {
+      const error = await res.json()
+      throw new Error(error.error || 'Failed to add conflict')
+    }
+    return res.json()
+  }
+
+  static async deleteEmployeeConflict(employeeId: string, conflictId: string): Promise<void> {
+    const res = await fetch(`${API_BASE}/employees/${employeeId}/conflicts/${conflictId}`, {
+      method: 'DELETE',
+    })
+    if (!res.ok) {
+      const error = await res.json()
+      throw new Error(error.error || 'Failed to delete conflict')
+    }
+  }
+
+  // Employee Preferences
+  static async getEmployeePreferences(employeeId: string): Promise<EmployeePreference[]> {
+    const res = await fetch(`${API_BASE}/employees/${employeeId}/preferences`)
+    if (!res.ok) throw new Error('Failed to fetch employee preferences')
+    return res.json()
+  }
+
+  static async addEmployeePreference(employeeId: string, preference: { employeeId2: string; weight?: number }): Promise<EmployeePreference> {
+    const res = await fetch(`${API_BASE}/employees/${employeeId}/preferences`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(preference),
+    })
+    if (!res.ok) {
+      const error = await res.json()
+      throw new Error(error.error || 'Failed to add preference')
+    }
+    return res.json()
+  }
+
+  static async deleteEmployeePreference(employeeId: string, preferenceId: string): Promise<void> {
+    const res = await fetch(`${API_BASE}/employees/${employeeId}/preferences/${preferenceId}`, {
+      method: 'DELETE',
+    })
+    if (!res.ok) {
+      const error = await res.json()
+      throw new Error(error.error || 'Failed to delete preference')
     }
   }
 }

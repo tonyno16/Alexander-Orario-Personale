@@ -11,7 +11,9 @@
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "test:api": "node test-api.js",
+    "db:check": "node check-database.js"
   },
   "dependencies": {
     "@prisma/client": "^5.20.0",

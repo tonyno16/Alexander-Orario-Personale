@@ -67,3 +67,30 @@ export interface WeekSchedule {
   assignments: ShiftAssignment[]
 }
 
+export interface EmployeeConflict {
+  id: string
+  employeeId1: string
+  employeeId2: string
+  reason?: string
+  createdAt?: Date
+  updatedAt?: Date
+}
+
+export interface EmployeePreference {
+  id: string
+  employeeId1: string
+  employeeId2: string
+  weight: number // Default 1.0, >1.0 = preferenza forte
+  createdAt?: Date
+  updatedAt?: Date
+}
+
+export interface SchedulingParameter {
+  id: string
+  key: string
+  value: any // Json value
+  description?: string
+  createdAt?: Date
+  updatedAt?: Date
+}
+
