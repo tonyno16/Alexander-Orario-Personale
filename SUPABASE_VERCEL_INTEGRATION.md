@@ -40,46 +40,28 @@ L'integrazione aggiungerà automaticamente queste variabili d'ambiente:
 - `NEXT_PUBLIC_SUPABASE_URL` - URL pubblico Supabase
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Chiave anonima Supabase
 
-## Step 4: Aggiorna Codice per Usare POSTGRES_PRISMA_URL
+## Step 4: Verifica Codice (Già Configurato ✅)
 
-Dato che stiamo usando Prisma, dobbiamo usare `POSTGRES_PRISMA_URL` invece di `DATABASE_URL`.
+**✅ BUONE NOTIZIE:** Il codice è già configurato correttamente!
 
-### Opzione A: Usa POSTGRES_PRISMA_URL direttamente
+Il file `lib/prisma.ts` è già stato aggiornato per usare automaticamente `POSTGRES_PRISMA_URL` se disponibile, altrimenti usa le altre variabili come fallback.
 
-Modifica `lib/prisma.ts` per usare `POSTGRES_PRISMA_URL`:
+**Non devi modificare nulla nel codice.** Il codice proverà automaticamente nell'ordine:
+1. `POSTGRES_PRISMA_URL` (da integrazione Supabase-Vercel) ⭐
+2. `POSTGRES_URL_NON_POOLING` (connection diretta)
+3. `POSTGRES_URL` (connection pooling)
+4. `DATABASE_URL` (fallback manuale)
 
-```typescript
-import { PrismaClient } from '@prisma/client'
+### Cosa Verificare
 
-const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClient | undefined
-}
+Dopo aver installato l'integrazione, verifica solo che:
 
-export const prisma =
-  globalForPrisma.prisma ??
-  new PrismaClient({
-    log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
-    datasources: {
-      db: {
-        url: process.env.POSTGRES_PRISMA_URL || process.env.DATABASE_URL,
-      },
-    },
-  })
+1. **Le variabili d'ambiente siano presenti** in Vercel:
+   - Vai su Settings → Environment Variables
+   - Verifica che `POSTGRES_PRISMA_URL` sia presente
+   - Se non c'è, l'integrazione non è stata installata correttamente
 
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
-```
-
-### Opzione B: Mantieni DATABASE_URL (più semplice)
-
-L'integrazione potrebbe non aggiungere `DATABASE_URL`, quindi possiamo:
-
-1. In Vercel Dashboard → Settings → Environment Variables
-2. Aggiungi manualmente:
-   - **Name:** `DATABASE_URL`
-   - **Value:** Copia il valore da `POSTGRES_PRISMA_URL`
-   - **Environment:** Tutte
-
-Oppure usa direttamente `POSTGRES_PRISMA_URL` nel codice.
+2. **Il codice è già pronto** - nessuna modifica necessaria!
 
 ## Step 5: Redeploy
 
