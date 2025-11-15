@@ -10,7 +10,9 @@ export const prisma =
     log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
     datasources: {
       db: {
-        url: process.env.DATABASE_URL,
+        // Usa POSTGRES_PRISMA_URL se disponibile (da integrazione Supabase-Vercel)
+        // Altrimenti usa DATABASE_URL (configurazione manuale)
+        url: process.env.POSTGRES_PRISMA_URL || process.env.DATABASE_URL,
       },
     },
   })
