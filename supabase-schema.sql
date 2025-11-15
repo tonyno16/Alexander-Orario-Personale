@@ -69,3 +69,24 @@ ALTER TABLE "ShiftRequirement" ADD CONSTRAINT "ShiftRequirement_restaurantId_fke
 ALTER TABLE "ShiftAssignment" ADD CONSTRAINT "ShiftAssignment_restaurantId_fkey" FOREIGN KEY ("restaurantId") REFERENCES "Restaurant"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 ALTER TABLE "ShiftAssignment" ADD CONSTRAINT "ShiftAssignment_employeeId_fkey" FOREIGN KEY ("employeeId") REFERENCES "Employee"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
+-- Abilita Row Level Security (RLS) su tutte le tabelle
+-- Policy permissive per MVP senza autenticazione
+ALTER TABLE "Restaurant" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "Employee" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "ShiftRequirement" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "ShiftAssignment" ENABLE ROW LEVEL SECURITY;
+
+-- Policy permissive: permette tutte le operazioni
+-- TODO: Quando aggiungerai autenticazione, sostituisci queste policy con policy più restrittive
+CREATE POLICY "Allow all operations on Restaurant" ON "Restaurant"
+    FOR ALL USING (true) WITH CHECK (true);
+
+CREATE POLICY "Allow all operations on Employee" ON "Employee"
+    FOR ALL USING (true) WITH CHECK (true);
+
+CREATE POLICY "Allow all operations on ShiftRequirement" ON "ShiftRequirement"
+    FOR ALL USING (true) WITH CHECK (true);
+
+CREATE POLICY "Allow all operations on ShiftAssignment" ON "ShiftAssignment"
+    FOR ALL USING (true) WITH CHECK (true);
+

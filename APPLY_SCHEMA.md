@@ -59,6 +59,20 @@ Puoi modificare il Build Command in Vercel per applicare automaticamente lo sche
 
 ⚠️ **Attenzione:** Questo applicherà lo schema ad ogni deploy. Usa solo se necessario.
 
+## Abilitare Row Level Security (RLS)
+
+Supabase richiede che RLS sia abilitato sulle tabelle pubbliche. Dopo aver applicato lo schema principale:
+
+1. **Esegui lo script RLS:**
+   - Nel SQL Editor, esegui anche il contenuto di `supabase-rls-policies.sql`
+   - Oppure usa lo script completo `supabase-schema.sql` che include già RLS
+
+2. **Verifica:**
+   - Vai su "Authentication" → "Policies" nel menu Supabase
+   - Dovresti vedere le policy create per ogni tabella
+
+**Nota:** Le policy attuali sono permissive (permettono tutte le operazioni) perché l'applicazione non ha ancora autenticazione. Quando aggiungerai autenticazione, dovrai sostituire queste policy con policy più restrittive.
+
 ## Verifica Schema Applicato
 
 Dopo aver applicato lo schema, verifica che tutto sia corretto:
