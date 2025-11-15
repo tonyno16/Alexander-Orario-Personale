@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { ApiService } from '@/lib/api'
 import { Employee, EmployeeRole, DayOfWeek } from '@/types'
 import WeekCalendar from '@/components/WeekCalendar'
+import MonthCalendar from '@/components/MonthCalendar'
 
 const ROLES: EmployeeRole[] = [
   'cuoco',
@@ -23,8 +24,10 @@ export default function EmployeesPage() {
     role: 'cuoco' as EmployeeRole,
     availability: 5,
     availableDays: [] as DayOfWeek[],
+    availableDates: [] as string[],
     restaurants: [] as string[],
   })
+  const [showMonthCalendar, setShowMonthCalendar] = useState(false)
   const [restaurants, setRestaurants] = useState<{ id: string; name: string }[]>([])
 
   useEffect(() => {
@@ -70,6 +73,7 @@ export default function EmployeesPage() {
       role: employee.role,
       availability: employee.availability,
       availableDays: employee.availableDays || [],
+      availableDates: employee.availableDates || [],
       restaurants: employee.restaurants || [],
     })
   }
@@ -91,8 +95,10 @@ export default function EmployeesPage() {
       role: 'cuoco',
       availability: 5,
       availableDays: [],
+      availableDates: [],
       restaurants: [],
     })
+    setShowMonthCalendar(false)
   }
 
   const handleAvailableDaysChange = (days: DayOfWeek[]) => {
@@ -158,14 +164,45 @@ export default function EmployeesPage() {
             </select>
           </div>
 
-          <div>
-            <WeekCalendar
-              selectedDays={formData.availableDays}
-              onChange={handleAvailableDaysChange}
-            />
-            <p className="mt-2 text-xs text-gray-500">
-              Disponibilità totale: {formData.availableDays.length === 0 ? '7' : formData.availableDays.length} giorni/settimana
-            </p>
+          <div className="space-y-4">
+            {/* Disponibilità Ricorrente (Giorni della Settimana) */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  Disponibilità Ricorrente (Giorni della Settimana)
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setShowMonthCalendar(!showMonthCalendar)}
+                  className="text-xs text-blue-600 hover:text-blue-800"
+                >
+                  {showMonthCalendar ? 'Nascondi' : 'Mostra'} Calendario Date Specifiche
+                </button>
+              </div>
+              <WeekCalendar
+                selectedDays={formData.availableDays}
+                onChange={handleAvailableDaysChange}
+              />
+              <p className="mt-2 text-xs text-gray-500">
+                Disponibilità ricorrente: {formData.availableDays.length === 0 ? 'Tutti i giorni' : `${formData.availableDays.length} giorni/settimana`}
+              </p>
+            </div>
+
+            {/* Disponibilità Date Specifiche (Calendario Mensile) */}
+            {showMonthCalendar && (
+              <div className="border-t pt-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Disponibilità Date Specifiche (Calendario)
+                </label>
+                <MonthCalendar
+                  selectedDates={formData.availableDates}
+                  onChange={(dates) => setFormData({ ...formData, availableDates: dates })}
+                />
+                <p className="mt-2 text-xs text-gray-500">
+                  Date specifiche selezionate: {formData.availableDates.length} {formData.availableDates.length === 1 ? 'giorno' : 'giorni'}
+                </p>
+              </div>
+            )}
           </div>
 
           <div>

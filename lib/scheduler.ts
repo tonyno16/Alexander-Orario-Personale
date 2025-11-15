@@ -131,10 +131,27 @@ export class SchedulerService {
         continue
       }
 
-      // Verifica che il dipendente sia disponibile in questo giorno specifico
+      // Verifica disponibilità ricorrente (giorni della settimana)
       // Se availableDays è vuoto, il dipendente è disponibile tutti i giorni
       if (emp.availableDays && emp.availableDays.length > 0 && !emp.availableDays.includes(day)) {
         continue
+      }
+
+      // Verifica disponibilità date specifiche (se configurate)
+      // Se availableDates ha valori, il dipendente è disponibile SOLO in quelle date
+      // Questo sovrascrive la disponibilità ricorrente (availableDays)
+      if (emp.availableDates && emp.availableDates.length > 0) {
+        // Calcola la data del giorno corrente nella settimana
+        const weekStartDate = new Date(weekStart + 'T00:00:00') // Assicura timezone corretto
+        const dayIndex = DAYS_OF_WEEK.indexOf(day)
+        const currentDate = new Date(weekStartDate)
+        currentDate.setDate(weekStartDate.getDate() + dayIndex)
+        const dateString = currentDate.toISOString().split('T')[0] // YYYY-MM-DD
+        
+        // Se ci sono date specifiche, il dipendente è disponibile SOLO in quelle date
+        if (!emp.availableDates.includes(dateString)) {
+          continue
+        }
       }
 
       // Verifica che il dipendente abbia ancora disponibilità

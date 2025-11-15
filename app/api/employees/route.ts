@@ -20,7 +20,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { name, role, availability, availableDays, restaurants } = body
+    const { name, role, availability, availableDays, availableDates, restaurants } = body
 
     // Validazione
     if (!name || !role || availability === undefined) {
@@ -63,6 +63,7 @@ export async function POST(request: NextRequest) {
         role,
         availability: calculatedAvailability,
         availableDays: availableDays || [],
+        availableDates: availableDates || [],
         restaurants: restaurants || [],
       },
     })

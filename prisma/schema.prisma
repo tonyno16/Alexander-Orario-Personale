@@ -13,6 +13,7 @@ model Employee {
   role          String   // 'cuoco' | 'aiuto_cuoco' | 'pizzaiolo' | 'lavapiatti' | 'cameriere' | 'aiuto_cameriere'
   availability  Int      // giorni disponibili a settimana (mantenuto per retrocompatibilità, calcolato da availableDays)
   availableDays String[] // array di giorni disponibili: ['lunedi', 'martedi', ...] (vuoto = tutti i giorni)
+  availableDates String[] // array di date specifiche disponibili: ['2024-11-15', '2024-11-16', ...] (formato YYYY-MM-DD)
   restaurants   String[] // array di ID ristoranti (vuoto = tutti)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt

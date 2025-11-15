@@ -22,7 +22,8 @@ export interface Employee {
   name: string
   role: EmployeeRole
   availability: number // Giorni disponibili a settimana (calcolato da availableDays per retrocompatibilità)
-  availableDays: DayOfWeek[] // Giorni specifici disponibili (vuoto = tutti i giorni)
+  availableDays: DayOfWeek[] // Giorni della settimana disponibili (vuoto = tutti i giorni)
+  availableDates: string[] // Date specifiche disponibili (formato YYYY-MM-DD) - per disponibilità temporanee
   restaurants: string[] // ID ristoranti (vuoto = tutti)
   createdAt?: Date
   updatedAt?: Date

@@ -34,7 +34,7 @@ export async function PUT(
 ) {
   try {
     const body = await request.json()
-    const { name, role, availability, availableDays, restaurants } = body
+    const { name, role, availability, availableDays, availableDates, restaurants } = body
 
     // Validazione
     if (role) {
@@ -73,6 +73,7 @@ export async function PUT(
         ...(role && { role }),
         ...(calculatedAvailability !== undefined && { availability: calculatedAvailability }),
         ...(availableDays !== undefined && { availableDays }),
+        ...(availableDates !== undefined && { availableDates }),
         ...(restaurants !== undefined && { restaurants }),
       },
     })
