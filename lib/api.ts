@@ -146,7 +146,10 @@ export class ApiService {
     })
     if (!res.ok) {
       const error = await res.json()
-      throw new Error(error.error || 'Failed to initialize database')
+      const errorMessage = error.details 
+        ? `${error.error}: ${error.details}` 
+        : error.error || 'Failed to initialize database'
+      throw new Error(errorMessage)
     }
   }
 }

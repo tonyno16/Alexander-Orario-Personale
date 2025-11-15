@@ -80,10 +80,15 @@ export async function POST() {
       },
       { status: 201 }
     )
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error initializing database:', error)
+    const errorMessage = error?.message || error?.toString() || 'Unknown error'
     return NextResponse.json(
-      { error: 'Failed to initialize database' },
+      { 
+        error: 'Failed to initialize database',
+        details: errorMessage,
+        code: error?.code
+      },
       { status: 500 }
     )
   }
