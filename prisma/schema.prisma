@@ -1,0 +1,65 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Employee {
+  id          String   @id @default(cuid())
+  name        String
+  role        String   // 'cuoco' | 'aiuto_cuoco' | 'pizzaiolo' | 'lavapiatti' | 'cameriere' | 'aiuto_cameriere'
+  availability Int     // giorni disponibili a settimana
+  restaurants  String[] // array di ID ristoranti (vuoto = tutti)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  assignments ShiftAssignment[]
+
+  @@index([role])
+}
+
+model Restaurant {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  requirements ShiftRequirement[]
+  assignments  ShiftAssignment[]
+}
+
+model ShiftRequirement {
+  id           String   @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  day          String   // 'lunedi' | 'martedi' | 'mercoledi' | 'giovedi' | 'venerdi' | 'sabato' | 'domenica'
+  shift        String   // 'pranzo' | 'cena'
+  requirements Json     // Array di { role: string, count: number }
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([restaurantId, day, shift])
+  @@index([restaurantId])
+}
+
+model ShiftAssignment {
+  id           String   @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  employeeId   String
+  employee     Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  day          String   // 'lunedi' | 'martedi' | 'mercoledi' | 'giovedi' | 'venerdi' | 'sabato' | 'domenica'
+  shift        String   // 'pranzo' | 'cena'
+  role         String   // ruolo del dipendente per questo turno
+  weekStart    String   // data inizio settimana (YYYY-MM-DD)
+  createdAt    DateTime @default(now())
+
+  @@index([restaurantId, day, shift])
+  @@index([employeeId])
+  @@index([weekStart])
+  @@unique([restaurantId, day, shift, employeeId, weekStart])
+}
+

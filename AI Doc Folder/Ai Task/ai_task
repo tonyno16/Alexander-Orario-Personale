@@ -1,0 +1,248 @@
+# AI Task Planning Template - Starter Framework
+
+> **About This Template:** This is a systematic framework for planning and executing technical projects with AI assistance. Use this structure to break down complex features, improvements, or fixes into manageable, trackable tasks that AI agents can execute effectively.
+
+---
+
+## 1. Task Overview
+
+### Task Title
+<!-- Give your task a clear, specific name that describes what you're building or fixing -->
+**Title:** Implementar flujo de evaluación multi-modelo para respuestas LLM
+
+### Goal Statement
+<!-- Write one paragraph explaining what you want to achieve and why it matters for your project -->
+**Goal:** Diseñar e implementar un pipeline que envíe tareas críticas a múltiples modelos de lenguaje, compare automáticamente sus resultados y seleccione la mejor respuesta, elevando la precisión de las respuestas comerciales sin sacrificar velocidad operativa.
+
+---
+
+## 2. Project Analysis & Current State
+
+### Technology & Architecture
+<!-- This is where you document your current tech stack so the AI understands your environment -->
+- **Frameworks & Versions:** FastAPI 0.110, LangChain 0.2
+- **Language:** Python 3.10
+- **Database & ORM:** PostgreSQL 15 con SQLAlchemy 2.0
+- **UI & Styling:** React 18 con Chakra UI
+- **Authentication:** Auth0 con OAuth 2.0 (PKCE)
+- **Key Architectural Patterns:** Arquitectura hexagonal, colas de trabajo asincrónicas con Celery
+
+### Current State
+<!-- Describe what exists today - what's working, what's broken, what's missing -->
+El sistema actual consulta un único modelo LLM (GPT-4o-mini) por petición y devuelve la respuesta directamente al usuario. No existe comparación entre múltiples modelos ni un registro estructurado de métricas de calidad. Necesitamos agregar soporte para orquestar múltiples modelos, almacenar sus resultados y calcular métricas de selección para uso comercial.
+
+## 3. Context & Problem Definition
+
+### Problem Statement
+<!-- This is where you clearly define the specific problem you're solving -->
+Los clientes empresariales exigen respuestas con menor tasa de error y evidencia auditada. Con el flujo actual dependemos de un único modelo, lo que genera inconsistencias en casos límite y falta de trazabilidad. Además, los acuerdos comerciales condicionan la renovación a un aumento de precisión del 15 % en flujos críticos en los próximos dos meses.
+
+### Success Criteria
+<!-- Define exactly how you'll know when this task is complete and successful -->
+- [ ] Orquestar al menos tres modelos LLM y registrar sus respuestas con metadatos en menos de 1.5 s adicionales.
+- [ ] Implementar un evaluador automático que puntúe las respuestas y seleccione la mejor con ≥90 % de coincidencia frente a juicios humanos de referencia.
+- [ ] Exponer un dashboard que muestre métricas de precisión, latencia y acuerdos con feedback anotado por los analistas comerciales.
+
+---
+
+## 4. Development Mode Context
+
+### Development Mode Context
+<!-- This is where you tell the AI agent about your project's constraints and priorities -->
+- **🚨 Project Stage:** Sistema productivo con extensiones nuevas
+- **Breaking Changes:** Deben evitarse; desplegar tras validar en entorno staging
+- **Data Handling:** Mantener logs históricos y garantizar anonimización de datos sensibles
+- **User Base:** Analistas internos y clientes B2B con SLAs estrictos
+- **Priority:** Priorizar estabilidad y precisión sobre velocidad de entrega
+
+---
+
+## 5. Technical Requirements
+
+### Functional Requirements
+<!-- This is where the AI will understand exactly what the system should do - be specific about user actions and system behaviors -->
+
+Requisitos funcionales para usuarios y automatizaciones
+- Usuario puede enviar una consulta crítica marcándola con prioridad comercial.
+- Sistema ejecuta la consulta en paralelo contra los modelos configurados y persiste las respuestas.
+- Cuando el evaluador detecta empate o baja confianza, el sistema solicita revisión humana con contexto completo.
+
+### Non-Functional Requirements
+<!-- This is where you define performance, security, and usability standards -->
+- **Performance:** Latencia total < 3 s P95 para flujos prioritarios
+- **Security:** Cumplimiento SOC 2; cifrado en reposo y en tránsito; logs firmados
+- **Usability:** UI clara para comparar respuestas modelo; accesibilidad WCAG 2.1 AA
+- **Responsive Design:** Debe funcionar en desktop y tablet; mobile lectura básica
+- **Theme Support:** Tema claro acorde branding corporativo; modo oscuro opcional
+
+### Technical Constraints
+<!-- This is where you list limitations the AI agent must work within -->
+- Debe integrarse con el pipeline de monitorización existente en Prometheus/Grafana
+- No modificar los contratos públicos del API `/v1/assist/completions`
+- Mantener compatibilidad con el sistema de auditoría legal actual
+
+---
+
+## 6. Data & Database Changes
+
+### Database Schema Changes
+<!-- This is where you specify any database modifications needed -->
+
+Crear tabla `model_runs` con campos para `request_id`, `model_id`, `response_text`, `confidence`, `latency_ms`, `metadata`.
+Crear tabla `evaluation_scores` con `run_id`, `metric`, `score`, `evaluator_version`.
+Añadir índice compuesto (`request_id`, `model_id`).
+
+### Data Model Updates
+<!-- This is where you define TypeScript types, schema updates, or data structure changes -->
+
+Actualizar tipos `LLMResponse` para incluir `modelId`, `confidence`, `evaluationTrace`.
+Crear interfaz `EvaluationResult` con `scores: Dict[str, float]`, `winnerModelId`, `explanations`.
+
+### Data Migration Plan
+<!-- This is where you plan how to handle existing data during changes -->
+
+Respaldar tablas actuales (`responses`).
+Aplicar migraciones con Alembic.
+Migrar registros recientes agregando `model_id` por defecto.
+Validar integridad con reportes SQL y pruebas de regresión.
+
+---
+
+## 7. API & Backend Changes
+
+### Data Access Pattern Rules
+<!-- This is where you tell the AI agent how to structure backend code in your project -->
+
+Las mutaciones y workflows irán en `services/workflows/multi_model.py`.
+Consultas y agregaciones en `repositories/model_runs_repository.py`.
+Los endpoints públicos se ajustarán en `api/v1/responses.py` usando dependencias de FastAPI.
+
+### Server Actions
+<!-- List the backend mutation operations you need -->
+
+- `create_model_run(request_id, model_id, payload)` guarda cada respuesta.
+- `create_evaluation_score(run_id, metric, score)` persiste métricas.
+- `update_request_winner(request_id, winner_model_id, rationale)` marca la selección final.
+
+### Database Queries
+<!-- Specify how you'll fetch data -->
+
+Utilizar funciones específicas en el repositorio con SQLAlchemy para obtener histórico por `request_id`, métricas agregadas y rankings temporales.
+
+---
+
+## 8. Frontend Changes
+
+### New Components
+<!-- This is where you specify UI components to be created -->
+
+- `ModelComparisonTable`: tabla que muestre respuestas y métricas por modelo.
+- `ConfidenceBadge`: componente visual para resaltar nivel de confianza.
+- `EscalationModal`: permite solicitar revisión humana con contexto adjunto.
+
+### Page Updates
+<!-- This is where you list pages that need modifications -->
+
+- `DashboardPage`: añadir widgets de precisión, latencia y alertas.
+- `RequestDetailPage`: incorporar pestaña de comparación multi-modelo.
+- `AdminSettingsPage`: permitir configurar pesos de evaluación y modelos activos.
+
+### State Management
+<!-- This is where you plan how data flows through your frontend -->
+
+Usar Zustand para estado global del dashboard; React Query para fetch y cacheo de resultados; eventos de WebSocket para actualizaciones en tiempo real de evaluaciones pendientes.
+
+---
+
+## 9. Implementation Plan
+
+1. Diseño técnico y migraciones (`docs/architecture/multi-model.md`, `migrations/versions/`).
+   - Redactar ADR sobre estrategia multi-modelo y evaluador.
+   - Definir esquema de bases de datos y preparar migraciones Alembic.
+   - Revisar plan con equipo de datos y seguridad.
+2. Backend: orquestación y repositorios (`services/workflows/multi_model.py`, `repositories/model_runs_repository.py`).
+   - Implementar servicio asincrónico que dispare los modelos en paralelo.
+   - Crear repositorio para persistir runs y métricas.
+   - Añadir pruebas unitarias para cada flujo de éxito y errores comunes.
+3. Evaluador automático y métricas (`services/evaluators/`, `jobs/celery/evaluation_worker.py`).
+   - Desarrollar evaluador basado en prompts y reglas ponderadas.
+   - Integrar worker de Celery que compute puntuaciones y determine ganador.
+   - Publicar métricas en Prometheus (precisión, latencia, tasa de empates).
+4. Frontend y experiencia de analistas (`frontend/src/pages/DashboardPage.tsx`, `frontend/src/components/model/`).
+   - Construir tabla comparativa con filtros y exportación CSV.
+   - Añadir badges de confianza y flujo de escalamiento manual.
+   - Garantizar accesibilidad y pruebas de snapshot.
+5. Observabilidad y alerting (`infra/prometheus/alerts.yml`, `frontend/src/pages/AdminSettingsPage.tsx`).
+   - Configurar alertas para latencia > 3 s y precisión < objetivo.
+   - Permitir ajuste dinámico de pesos en panel de administración.
+   - Documentar procedimientos de respuesta a incidentes.
+6. QA y pruebas con usuarios piloto (scripts en `tests/e2e/` y `tests/api/`).
+   - Crear pruebas e2e que validen selección de modelo correcto.
+   - Correr pruebas con dataset anotado por analistas comerciales.
+   - Recopilar feedback y ajustar parámetros antes de despliegue.
+
+---
+
+## 10. Task Completion Tracking
+
+### Real-Time Progress Tracking
+<!-- This is where you tell the AI agent to update progress as work is completed -->
+
+Configurar seguimiento basado en issues de Linear vinculados a hitos semanales; reportar progreso diario en Slack `#ai-pipeline` con porcentaje completado y riesgos.
+
+---
+
+## 11. File Structure & Organization
+
+- Nuevos: `services/evaluators/ranker.py`, `frontend/src/components/model/ModelComparisonTable.tsx`.
+- Modificados: `services/workflows/multi_model.py`, `api/v1/responses.py`, `frontend/src/pages/DashboardPage.tsx`, `tests/api/test_multi_model.py`.
+
+---
+
+## 12. AI Agent Instructions
+
+### Implementation Workflow
+<!-- This is where you give specific instructions to your AI agent -->
+🎯 **MANDATORY PROCESS:**
+1. Confirmar requisitos y dependencias con equipo de cumplimiento.
+2. Redactar PRD corto y validarlo con stakeholders comerciales.
+3. Implementar funcionalidad en ramas feature con revisiones cruzadas.
+4. Ejecutar suite de pruebas automatizadas y pruebas exploratorias.
+5. Presentar demo y checklist de SLAs antes del merge a main.
+
+### Communication Preferences
+<!-- This is where you set expectations for how the AI should communicate -->
+- Actualizaciones breves al final de cada bloque de trabajo (mañana/tarde).
+- Alertar inmediatamente si se bloquea por dependencias externas o datos.
+- Documentar decisiones arquitectónicas en Confluence.
+
+### Code Quality Standards
+<!-- This is where you define your coding standards for the AI to follow -->
+- Seguir PEP 8 y convenciones internas de imports agrupados.
+- Cobertura mínima del 85 % en módulos nuevos.
+- Validar tipado con mypy antes de abrir PR.
+
+---
+
+## 13. Second-Order Impact Analysis
+
+### Impact Assessment
+<!-- This is where you think through broader consequences of your changes -->
+
+- Riesgo de degradar el endpoint `/v1/assist/completions`; monitorizar latencia y errores 5xx.
+- Posible impacto en workers de Celery por aumento de carga; verificar escalabilidad horizontal.
+- Usuarios analistas necesitan transición suave; planificar capacitación y guía rápida.
+- Implicaciones comerciales: mejora en precisión aumenta retención y habilita upsell de plan premium; fallos podrían generar incumplimiento contractual.
+
+---
+
+**🎯 Ready to Plan Your Next Project?**
+
+This template gives you the framework - now fill it out with your specific project details! 
+
+*Want the complete version with detailed examples, advanced strategies, and full AI agent workflows? [Watch the full tutorial video here]*
+
+---
+
+*This template is part of ShipKit - AI-powered development workflows and templates*  
+*Get the complete toolkit at: https://shipkit.ai* 
