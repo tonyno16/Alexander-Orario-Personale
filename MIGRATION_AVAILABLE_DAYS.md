@@ -1,8 +1,10 @@
-# Migrazione Database - Aggiunta Campo availableDays
+# Migrazione Database - Aggiunta Campi availableDays e availableDates
 
 ## Modifiche Schema
 
-È stato aggiunto il campo `availableDays` al modello `Employee` per permettere la selezione specifica dei giorni disponibili invece di solo un numero.
+Sono stati aggiunti due nuovi campi al modello `Employee`:
+- `availableDays`: Array di giorni della settimana disponibili (ricorrente)
+- `availableDates`: Array di date specifiche disponibili (formato YYYY-MM-DD)
 
 ## Applicare Migrazione
 
@@ -26,12 +28,15 @@ npm run db:migrate
 Se preferisci applicare manualmente su Supabase:
 
 ```sql
--- Aggiungi colonna availableDays
+-- Aggiungi colonna availableDays (giorni della settimana)
 ALTER TABLE "Employee" 
 ADD COLUMN IF NOT EXISTS "availableDays" TEXT[] DEFAULT '{}';
 
--- Aggiorna availability esistente basandosi su availableDays se vuoto
--- (Per dipendenti esistenti, availability rimane invariato)
+-- Aggiungi colonna availableDates (date specifiche)
+ALTER TABLE "Employee" 
+ADD COLUMN IF NOT EXISTS "availableDates" TEXT[] DEFAULT '{}';
+
+-- Per dipendenti esistenti, availability rimane invariato
 ```
 
 ## Retrocompatibilità
