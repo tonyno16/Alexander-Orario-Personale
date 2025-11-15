@@ -186,9 +186,30 @@ npm run db:push
 npm run db:studio
 ```
 
+## Deployment
+
+Per deployare l'applicazione in produzione, consulta la [Guida al Deployment](DEPLOYMENT.md).
+
+**Opzioni Consigliate:**
+
+- **Vercel + Supabase** (Consigliato): Gratuito, ottimizzato per Next.js, facile da configurare
+- **Railway**: Tutto-in-uno, Next.js + PostgreSQL sulla stessa piattaforma
+- **Render**: Tier gratuito disponibile con supporto Next.js e PostgreSQL
+
+**Quick Start (Vercel + Supabase):**
+
+1. Crea database PostgreSQL su [Supabase](https://supabase.com)
+2. Crea progetto su [Vercel](https://vercel.com) e collega repository GitHub
+3. Configura variabile d'ambiente `DATABASE_URL` in Vercel
+4. Applica schema database: `npm run db:push` (con DATABASE_URL di Supabase)
+5. Deploy automatico ad ogni push su `main`
+
+Per istruzioni dettagliate, vedi [DEPLOYMENT.md](DEPLOYMENT.md).
+
 ## Prossimi Passi (Future Miglioramenti)
 
 - [x] Database persistente (PostgreSQL, MongoDB, ecc.) ✅
+- [x] Deployment produzione ✅
 - [ ] Autenticazione utente
 - [ ] Notifiche ai dipendenti
 - [x] Esportazione PDF dei turni ✅
