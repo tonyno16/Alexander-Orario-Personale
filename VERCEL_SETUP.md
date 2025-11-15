@@ -26,11 +26,22 @@
 Nella sezione "Environment Variables", aggiungi:
 
 **Nome:** `DATABASE_URL`  
-**Valore:** `postgresql://postgres:Frankmerenda1@db.vparigzctrwaxkzphlvf.supabase.co:5432/postgres`
+**Valore:** La connection string completa da Supabase Dashboard
 
-⚠️ **IMPORTANTE:** Sostituisci con la tua connection string completa da Supabase Dashboard se diversa.
+⚠️ **IMPORTANTE:** 
+1. Vai su Supabase Dashboard → Settings → Database
+2. Trova "Connection string" → Seleziona **URI** (non Session o Transaction)
+3. Copia la connection string completa
+4. Formato: `postgresql://postgres:[PASSWORD]@db.[PROJECT-REF].supabase.co:5432/postgres`
+5. Incolla nel campo "Valore" in Vercel
 
 **Environment:** Seleziona tutte le opzioni (Production, Preview, Development)
+
+**Verifica:**
+- La connection string deve iniziare con `postgresql://`
+- Deve contenere la password del database
+- Deve usare la porta `5432`
+- Deve terminare con `/postgres`
 
 ## Step 5: Deploy
 
