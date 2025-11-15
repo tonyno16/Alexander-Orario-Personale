@@ -59,27 +59,6 @@ export default function Home() {
     }
   }, [initializeDatabase])
 
-  const initializeDatabase = useCallback(async () => {
-    try {
-      setInitializing(true)
-      await ApiService.initializeDatabase()
-      // Ricarica i dati dopo l'inizializzazione
-      const [emps, rests, reqs] = await Promise.all([
-        ApiService.getEmployees(),
-        ApiService.getRestaurants(),
-        ApiService.getRequirements(),
-      ])
-      setEmployees(emps)
-      setRestaurants(rests)
-      setRequirements(reqs)
-    } catch (error) {
-      console.error('Error initializing database:', error)
-      alert('Errore durante l\'inizializzazione del database')
-    } finally {
-      setInitializing(false)
-    }
-  }, [])
-
   useEffect(() => {
     loadData()
   }, [loadData])
