@@ -18,6 +18,7 @@ export async function POST() {
       prisma.restaurant.create({ data: { name: 'Rivoli' } }),
       prisma.restaurant.create({ data: { name: 'Pinerolo' } }),
       prisma.restaurant.create({ data: { name: 'Piossasco' } }),
+      prisma.restaurant.create({ data: { name: 'Giaveno' } }),
     ])
 
     // Crea 6 dipendenti di esempio con giorni disponibili

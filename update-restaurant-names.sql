@@ -78,6 +78,15 @@ SELECT
     CASE 
         WHEN COUNT(*) FILTER (WHERE name = 'Piossasco') > 0 THEN '✅ Piossasco presente'
         ELSE '❌ Piossasco mancante'
-    END as piossasco_status
+    END as piossasco_status,
+    CASE 
+        WHEN COUNT(*) FILTER (WHERE name = 'Giaveno') > 0 THEN '✅ Giaveno presente'
+        ELSE '❌ Giaveno mancante'
+    END as giaveno_status
 FROM "Restaurant";
+
+-- Crea Giaveno se non esiste
+INSERT INTO "Restaurant" ("id", "name", "createdAt", "updatedAt")
+SELECT gen_random_uuid()::text, 'Giaveno', NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM "Restaurant" WHERE "name" = 'Giaveno');
 
