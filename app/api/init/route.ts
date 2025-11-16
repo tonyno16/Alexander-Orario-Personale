@@ -14,10 +14,10 @@ export async function POST() {
 
     // Crea 4 ristoranti
     const restaurants = await Promise.all([
-      prisma.restaurant.create({ data: { name: 'Ristorante A' } }),
-      prisma.restaurant.create({ data: { name: 'Ristorante B' } }),
-      prisma.restaurant.create({ data: { name: 'Ristorante C' } }),
-      prisma.restaurant.create({ data: { name: 'Ristorante D' } }),
+      prisma.restaurant.create({ data: { name: 'Valsangone' } }),
+      prisma.restaurant.create({ data: { name: 'Rivoli' } }),
+      prisma.restaurant.create({ data: { name: 'Pinerolo' } }),
+      prisma.restaurant.create({ data: { name: 'Piossasco' } }),
     ])
 
     // Crea 6 dipendenti di esempio con giorni disponibili
