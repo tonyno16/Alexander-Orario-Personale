@@ -54,22 +54,32 @@ export default function SchedulePage() {
   const handleGenerate = async () => {
     try {
       setGenerating(true)
-      const [rests, emps, reqs] = await Promise.all([
-        ApiService.getRestaurants(),
-        ApiService.getEmployees(),
-        ApiService.getRequirements(),
-      ])
-      const newAssignments = await SchedulerService.generateSchedule(
-        emps,
-        rests,
-        reqs,
-        weekStart
-      )
-      await ApiService.saveSchedule(weekStart, newAssignments)
-      await loadData()
-    } catch (error) {
+      
+      // Chiama l'API per generare lo schedule
+      const response = await fetch(`/api/schedules/${weekStart}/generate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || error.details || 'Errore durante la generazione')
+      }
+
+      const result = await response.json()
+      
+      if (result.success) {
+        // Ricarica i dati
+        await loadData()
+        alert(`✅ Schedule generato con successo! ${result.count} assegnazioni create.`)
+      } else {
+        throw new Error('Generazione fallita')
+      }
+    } catch (error: any) {
       console.error('Error generating schedule:', error)
-      alert('Errore durante la generazione dei turni')
+      alert(`Errore durante la generazione dei turni: ${error.message || error}`)
     } finally {
       setGenerating(false)
     }
