@@ -1,4 +1,4 @@
-import { Employee, Restaurant, ShiftRequirement, ShiftAssignment, EmployeeConflict, EmployeePreference } from '@/types'
+import { Employee, Restaurant, ShiftRequirement, ShiftAssignment, EmployeeConflict, EmployeePreference, EmployeeRestaurantPreference } from '@/types'
 
 const API_BASE = '/api'
 
@@ -210,6 +210,49 @@ export class ApiService {
     if (!res.ok) {
       const error = await res.json()
       throw new Error(error.error || 'Failed to delete preference')
+    }
+  }
+
+  // Employee Restaurant Preferences
+  static async getEmployeeRestaurantPreferences(employeeId: string): Promise<EmployeeRestaurantPreference[]> {
+    const res = await fetch(`${API_BASE}/employees/${employeeId}/restaurant-preferences`)
+    if (!res.ok) throw new Error('Failed to fetch restaurant preferences')
+    return res.json()
+  }
+
+  static async addEmployeeRestaurantPreference(employeeId: string, preference: { restaurantId: string; weight?: number }): Promise<EmployeeRestaurantPreference> {
+    const res = await fetch(`${API_BASE}/employees/${employeeId}/restaurant-preferences`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(preference),
+    })
+    if (!res.ok) {
+      const error = await res.json()
+      throw new Error(error.error || 'Failed to add restaurant preference')
+    }
+    return res.json()
+  }
+
+  static async updateEmployeeRestaurantPreference(employeeId: string, preferenceId: string, weight: number): Promise<EmployeeRestaurantPreference> {
+    const res = await fetch(`${API_BASE}/employees/${employeeId}/restaurant-preferences/${preferenceId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ weight }),
+    })
+    if (!res.ok) {
+      const error = await res.json()
+      throw new Error(error.error || 'Failed to update restaurant preference')
+    }
+    return res.json()
+  }
+
+  static async deleteEmployeeRestaurantPreference(employeeId: string, preferenceId: string): Promise<void> {
+    const res = await fetch(`${API_BASE}/employees/${employeeId}/restaurant-preferences/${preferenceId}`, {
+      method: 'DELETE',
+    })
+    if (!res.ok) {
+      const error = await res.json()
+      throw new Error(error.error || 'Failed to delete restaurant preference')
     }
   }
 }

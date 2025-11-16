@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS "Employee" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "role" TEXT NOT NULL,
+    "roles" TEXT[] DEFAULT '{}',
     "availability" INTEGER NOT NULL,
     "availableDays" TEXT[] DEFAULT '{}',
     "availableDates" TEXT[] DEFAULT '{}',
@@ -36,6 +37,14 @@ ADD COLUMN IF NOT EXISTS "availableDays" TEXT[] DEFAULT '{}';
 
 ALTER TABLE "Employee" 
 ADD COLUMN IF NOT EXISTS "availableDates" TEXT[] DEFAULT '{}';
+
+ALTER TABLE "Employee" 
+ADD COLUMN IF NOT EXISTS "roles" TEXT[] DEFAULT '{}';
+
+-- Per dipendenti esistenti senza ruoli, copia il ruolo principale nel campo roles
+UPDATE "Employee" 
+SET "roles" = ARRAY["role"] 
+WHERE "roles" = '{}' OR array_length("roles", 1) IS NULL;
 
 -- Tabella ShiftRequirement
 CREATE TABLE IF NOT EXISTS "ShiftRequirement" (
@@ -88,6 +97,17 @@ CREATE TABLE IF NOT EXISTS "EmployeePreference" (
     CONSTRAINT "EmployeePreference_pkey" PRIMARY KEY ("id")
 );
 
+-- Tabella EmployeeRestaurantPreference (preferenze ristoranti con pesi)
+CREATE TABLE IF NOT EXISTS "EmployeeRestaurantPreference" (
+    "id" TEXT NOT NULL,
+    "employeeId" TEXT NOT NULL,
+    "restaurantId" TEXT NOT NULL,
+    "weight" DOUBLE PRECISION NOT NULL DEFAULT 1.0,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "EmployeeRestaurantPreference_pkey" PRIMARY KEY ("id")
+);
+
 -- Tabella SchedulingParameter
 CREATE TABLE IF NOT EXISTS "SchedulingParameter" (
     "id" TEXT NOT NULL,
@@ -114,6 +134,8 @@ CREATE INDEX IF NOT EXISTS "EmployeeConflict_employeeId1_idx" ON "EmployeeConfli
 CREATE INDEX IF NOT EXISTS "EmployeeConflict_employeeId2_idx" ON "EmployeeConflict"("employeeId2");
 CREATE INDEX IF NOT EXISTS "EmployeePreference_employeeId1_idx" ON "EmployeePreference"("employeeId1");
 CREATE INDEX IF NOT EXISTS "EmployeePreference_employeeId2_idx" ON "EmployeePreference"("employeeId2");
+CREATE INDEX IF NOT EXISTS "EmployeeRestaurantPreference_employeeId_idx" ON "EmployeeRestaurantPreference"("employeeId");
+CREATE INDEX IF NOT EXISTS "EmployeeRestaurantPreference_restaurantId_idx" ON "EmployeeRestaurantPreference"("restaurantId");
 
 -- ============================================
 -- UNIQUE CONSTRAINTS
@@ -124,6 +146,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS "ShiftRequirement_restaurantId_day_shift_key" 
 CREATE UNIQUE INDEX IF NOT EXISTS "ShiftAssignment_restaurantId_day_shift_employeeId_weekStart_key" ON "ShiftAssignment"("restaurantId", "day", "shift", "employeeId", "weekStart");
 CREATE UNIQUE INDEX IF NOT EXISTS "EmployeeConflict_employeeId1_employeeId2_key" ON "EmployeeConflict"("employeeId1", "employeeId2");
 CREATE UNIQUE INDEX IF NOT EXISTS "EmployeePreference_employeeId1_employeeId2_key" ON "EmployeePreference"("employeeId1", "employeeId2");
+CREATE UNIQUE INDEX IF NOT EXISTS "EmployeeRestaurantPreference_employeeId_restaurantId_key" ON "EmployeeRestaurantPreference"("employeeId", "restaurantId");
 CREATE UNIQUE INDEX IF NOT EXISTS "SchedulingParameter_key_key" ON "SchedulingParameter"("key");
 
 -- ============================================
@@ -173,6 +196,19 @@ ALTER TABLE "EmployeePreference"
 ADD CONSTRAINT "EmployeePreference_employeeId2_fkey" 
 FOREIGN KEY ("employeeId2") REFERENCES "Employee"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
+-- Foreign keys per EmployeeRestaurantPreference
+ALTER TABLE "EmployeeRestaurantPreference" 
+DROP CONSTRAINT IF EXISTS "EmployeeRestaurantPreference_employeeId_fkey";
+ALTER TABLE "EmployeeRestaurantPreference" 
+ADD CONSTRAINT "EmployeeRestaurantPreference_employeeId_fkey" 
+FOREIGN KEY ("employeeId") REFERENCES "Employee"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+ALTER TABLE "EmployeeRestaurantPreference" 
+DROP CONSTRAINT IF EXISTS "EmployeeRestaurantPreference_restaurantId_fkey";
+ALTER TABLE "EmployeeRestaurantPreference" 
+ADD CONSTRAINT "EmployeeRestaurantPreference_restaurantId_fkey" 
+FOREIGN KEY ("restaurantId") REFERENCES "Restaurant"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
 -- ============================================
 -- ROW LEVEL SECURITY (RLS)
 -- ============================================
@@ -184,6 +220,7 @@ ALTER TABLE "ShiftRequirement" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "ShiftAssignment" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "EmployeeConflict" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "EmployeePreference" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "EmployeeRestaurantPreference" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "SchedulingParameter" ENABLE ROW LEVEL SECURITY;
 
 -- Rimuovi policy esistenti se presenti (per evitare duplicati)
@@ -193,6 +230,7 @@ DROP POLICY IF EXISTS "Allow all operations on ShiftRequirement" ON "ShiftRequir
 DROP POLICY IF EXISTS "Allow all operations on ShiftAssignment" ON "ShiftAssignment";
 DROP POLICY IF EXISTS "Allow all operations on EmployeeConflict" ON "EmployeeConflict";
 DROP POLICY IF EXISTS "Allow all operations on EmployeePreference" ON "EmployeePreference";
+DROP POLICY IF EXISTS "Allow all operations on EmployeeRestaurantPreference" ON "EmployeeRestaurantPreference";
 DROP POLICY IF EXISTS "Allow all operations on SchedulingParameter" ON "SchedulingParameter";
 
 -- Policy permissive: permette tutte le operazioni
@@ -215,6 +253,9 @@ CREATE POLICY "Allow all operations on EmployeeConflict" ON "EmployeeConflict"
 CREATE POLICY "Allow all operations on EmployeePreference" ON "EmployeePreference"
     FOR ALL USING (true) WITH CHECK (true);
 
+CREATE POLICY "Allow all operations on EmployeeRestaurantPreference" ON "EmployeeRestaurantPreference"
+    FOR ALL USING (true) WITH CHECK (true);
+
 CREATE POLICY "Allow all operations on SchedulingParameter" ON "SchedulingParameter"
     FOR ALL USING (true) WITH CHECK (true);
 
@@ -233,6 +274,7 @@ AND table_name IN (
     'ShiftAssignment',
     'EmployeeConflict',
     'EmployeePreference',
+    'EmployeeRestaurantPreference',
     'SchedulingParameter'
 )
 ORDER BY table_name;

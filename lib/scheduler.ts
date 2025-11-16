@@ -88,6 +88,7 @@ export class SchedulerService {
     // Carica conflitti e preferenze se necessario
     let conflicts: Map<string, Set<string>> = new Map();
     let preferences: Map<string, Map<string, number>> = new Map();
+    let restaurantPreferences: Map<string, Map<string, number>> = new Map(); // employeeId -> restaurantId -> weight
 
     if (defaultOptions.avoidConflicts || defaultOptions.considerPreferences) {
       const employeeIds = employees.map((e) => e.id);
@@ -96,6 +97,9 @@ export class SchedulerService {
       }
       if (defaultOptions.considerPreferences) {
         preferences = await this.loadEmployeePreferences(employeeIds);
+        restaurantPreferences = await this.loadEmployeeRestaurantPreferences(
+          employeeIds
+        );
       }
     }
 
@@ -108,7 +112,8 @@ export class SchedulerService {
         weekStart,
         defaultOptions,
         conflicts,
-        preferences
+        preferences,
+        restaurantPreferences
       );
 
       // Applica ricerca locale per migliorare la soluzione se abilitato
@@ -121,7 +126,8 @@ export class SchedulerService {
           weekStart,
           defaultOptions,
           conflicts,
-          preferences
+          preferences,
+          restaurantPreferences
         );
       }
 
@@ -136,7 +142,8 @@ export class SchedulerService {
       weekStart,
       defaultOptions,
       conflicts,
-      preferences
+      preferences,
+      restaurantPreferences
     );
   }
 
@@ -150,7 +157,8 @@ export class SchedulerService {
     weekStart: string,
     options: SchedulingOptions,
     conflicts: Map<string, Set<string>>,
-    preferences: Map<string, Map<string, number>>
+    preferences: Map<string, Map<string, number>>,
+    restaurantPreferences: Map<string, Map<string, number>>
   ): Promise<ShiftAssignment[]> {
     const assignments: ShiftAssignment[] = [];
 
@@ -192,7 +200,8 @@ export class SchedulerService {
           weekStart,
           options,
           conflicts,
-          preferences
+          preferences,
+          restaurantPreferences
         );
 
         // Ordina per score (score più alto = migliore candidato)
@@ -256,7 +265,8 @@ export class SchedulerService {
     weekStart: string,
     options: SchedulingOptions,
     conflicts: Map<string, Set<string>>,
-    preferences: Map<string, Map<string, number>>
+    preferences: Map<string, Map<string, number>>,
+    restaurantPreferences: Map<string, Map<string, number>>
   ): Promise<ShiftAssignment[]> {
     // Se backtracking è abilitato, usa algoritmo con backtracking
     if (options.useBacktracking) {
@@ -267,7 +277,8 @@ export class SchedulerService {
         weekStart,
         options,
         conflicts,
-        preferences
+        preferences,
+        restaurantPreferences
       );
     }
 
@@ -279,7 +290,8 @@ export class SchedulerService {
       weekStart,
       options,
       conflicts,
-      preferences
+      preferences,
+      restaurantPreferences
     );
   }
 
@@ -293,7 +305,8 @@ export class SchedulerService {
     weekStart: string,
     options: SchedulingOptions,
     conflicts: Map<string, Set<string>>,
-    preferences: Map<string, Map<string, number>>
+    preferences: Map<string, Map<string, number>>,
+    restaurantPreferences: Map<string, Map<string, number>>
   ): Promise<ShiftAssignment[]> {
     const assignments: ShiftAssignment[] = [];
 
@@ -375,7 +388,8 @@ export class SchedulerService {
         options,
         requirementDifficulties,
         conflicts,
-        preferences
+        preferences,
+        restaurantPreferences
       );
 
       // Ordina per score (score più alto = migliore candidato)
@@ -490,7 +504,8 @@ export class SchedulerService {
           weekStart,
           options,
           conflicts,
-          preferences
+          preferences,
+          restaurantPreferences
         );
 
         if (reassigned > 0) {
@@ -526,7 +541,8 @@ export class SchedulerService {
     weekStart: string,
     options: SchedulingOptions,
     conflicts?: Map<string, Set<string>>,
-    preferences?: Map<string, Map<string, number>>
+    preferences?: Map<string, Map<string, number>>,
+    restaurantPreferences?: Map<string, Map<string, number>>
   ): number {
     const { restaurantId, day, shift } = requirement;
     const { role } = roleReq;
@@ -599,7 +615,8 @@ export class SchedulerService {
         weekStart,
         options,
         conflicts,
-        preferences
+        preferences,
+        restaurantPreferences
       );
 
       if (substitute) {
@@ -665,7 +682,8 @@ export class SchedulerService {
     weekStart: string,
     options: SchedulingOptions,
     conflicts?: Map<string, Set<string>>,
-    preferences?: Map<string, Map<string, number>>
+    preferences?: Map<string, Map<string, number>>,
+    restaurantPreferences?: Map<string, Map<string, number>>
   ): Employee | null {
     const candidates = this.findAndScoreEmployees(
       employeeAvailabilityMap,
@@ -677,7 +695,8 @@ export class SchedulerService {
       weekStart,
       options,
       conflicts,
-      preferences
+      preferences,
+      restaurantPreferences
     );
 
     // Trova il miglior candidato (escludendo quello da sostituire)
@@ -700,7 +719,8 @@ export class SchedulerService {
     weekStart: string,
     options: SchedulingOptions,
     conflicts: Map<string, Set<string>>,
-    preferences: Map<string, Map<string, number>>
+    preferences: Map<string, Map<string, number>>,
+    restaurantPreferences: Map<string, Map<string, number>>
   ): Promise<ShiftAssignment[]> {
     // Crea una mappa delle disponibilità dei dipendenti
     const employeeAvailabilityMap = new Map<string, EmployeeAvailability>();
@@ -767,7 +787,8 @@ export class SchedulerService {
       options,
       0,
       conflicts,
-      preferences
+      preferences,
+      restaurantPreferences
     );
 
     return result.assignments;
@@ -785,7 +806,8 @@ export class SchedulerService {
     options: SchedulingOptions,
     depth: number,
     conflicts: Map<string, Set<string>>,
-    preferences: Map<string, Map<string, number>>
+    preferences: Map<string, Map<string, number>>,
+    restaurantPreferences: Map<string, Map<string, number>>
   ): Promise<{ assignments: ShiftAssignment[]; success: boolean }> {
     // Se abbiamo processato tutti i requisiti, abbiamo una soluzione
     if (index >= requirementDifficulties.length) {
@@ -814,7 +836,8 @@ export class SchedulerService {
       options,
       requirementDifficulties,
       conflicts,
-      preferences
+      preferences,
+      restaurantPreferences
     );
 
     // Ordina per score
@@ -900,7 +923,8 @@ export class SchedulerService {
         options,
         depth + 1,
         conflicts,
-        preferences
+        preferences,
+        restaurantPreferences
       );
 
       if (result.success) {
@@ -919,7 +943,8 @@ export class SchedulerService {
         options,
         depth + 1,
         conflicts,
-        preferences
+        preferences,
+        restaurantPreferences
       );
       if (result.success) {
         console.warn(
@@ -1096,7 +1121,8 @@ export class SchedulerService {
     weekStart: string,
     options: SchedulingOptions,
     conflicts: Map<string, Set<string>>,
-    preferences: Map<string, Map<string, number>>
+    preferences: Map<string, Map<string, number>>,
+    restaurantPreferences: Map<string, Map<string, number>>
   ): ShiftAssignment[] {
     const maxIterations = options.maxLocalSearchIterations || 10;
     let currentAssignments = [...assignments];
@@ -1448,7 +1474,8 @@ export class SchedulerService {
     weekStart: string,
     options: SchedulingOptions,
     conflicts?: Map<string, Set<string>>,
-    preferences?: Map<string, Map<string, number>>
+    preferences?: Map<string, Map<string, number>>,
+    restaurantPreferences?: Map<string, Map<string, number>>
   ): AssignmentScore[] {
     const scored: AssignmentScore[] = [];
 
@@ -1480,7 +1507,8 @@ export class SchedulerService {
         shift,
         existingAssignments,
         options,
-        preferences
+        preferences,
+        restaurantPreferences
       );
 
       scored.push({
@@ -1509,8 +1537,12 @@ export class SchedulerService {
   ): boolean {
     const emp = empAvail.employee;
 
-    // Verifica ruolo
-    if (emp.role !== role) return false;
+    // Verifica ruolo - supporta ruoli multipli
+    const employeeRoles =
+      (emp as any).roles && (emp as any).roles.length > 0
+        ? (emp as any).roles
+        : [emp.role];
+    if (!employeeRoles.includes(role)) return false;
 
     // Verifica ristorante
     if (emp.restaurants.length > 0 && !emp.restaurants.includes(restaurantId)) {
@@ -1591,7 +1623,8 @@ export class SchedulerService {
     shift: Shift,
     existingAssignments: ShiftAssignment[],
     options: SchedulingOptions,
-    preferences?: Map<string, Map<string, number>>
+    preferences?: Map<string, Map<string, number>>,
+    restaurantPreferences?: Map<string, Map<string, number>>
   ): number {
     let score = 100; // Score base
     const emp = empAvail.employee;
@@ -1674,6 +1707,19 @@ export class SchedulerService {
         }
       }
       score += preferenceBonus;
+    }
+
+    // Bonus per preferenze ristoranti (se abilitato)
+    if (options.considerPreferences && restaurantPreferences) {
+      const empPrefs = restaurantPreferences.get(emp.id);
+      if (empPrefs) {
+        const restaurantWeight = empPrefs.get(restaurantId);
+        if (restaurantWeight !== undefined) {
+          // Bonus proporzionale al peso: 1.0 (X) = +5, 2.0 (XX) = +15, 3.0 (XXX) = +30
+          const restaurantBonus = (restaurantWeight - 1.0) * 15;
+          score += restaurantBonus;
+        }
+      }
     }
 
     return Math.max(0, score); // Assicura che lo score non sia negativo
@@ -1947,6 +1993,39 @@ export class SchedulerService {
   }
 
   /**
+   * Carica tutte le preferenze ristoranti dal database
+   * Ritorna una Map dove la chiave è employeeId e il valore è una Map di restaurantId -> weight
+   */
+  private static async loadEmployeeRestaurantPreferences(
+    employeeIds: string[]
+  ): Promise<Map<string, Map<string, number>>> {
+    const preferencesMap = new Map<string, Map<string, number>>();
+
+    try {
+      const preferences = await prisma.employeeRestaurantPreference.findMany({
+        where: {
+          employeeId: { in: employeeIds },
+        },
+      });
+
+      // Costruisce la mappa
+      for (const preference of preferences) {
+        if (!preferencesMap.has(preference.employeeId)) {
+          preferencesMap.set(preference.employeeId, new Map());
+        }
+        preferencesMap
+          .get(preference.employeeId)!
+          .set(preference.restaurantId, preference.weight);
+      }
+    } catch (error) {
+      console.error("Error loading restaurant preferences:", error);
+      // In caso di errore, ritorna mappa vuota (retrocompatibilità)
+    }
+
+    return preferencesMap;
+  }
+
+  /**
    * Verifica se due dipendenti hanno un conflitto
    */
   private static hasConflict(
@@ -2044,7 +2123,8 @@ export class SchedulerService {
     options: SchedulingOptions,
     requirementDifficulties: RequirementDifficulty[],
     conflicts?: Map<string, Set<string>>,
-    preferences?: Map<string, Map<string, number>>
+    preferences?: Map<string, Map<string, number>>,
+    restaurantPreferences?: Map<string, Map<string, number>>
   ): AssignmentScore[] {
     const scored: AssignmentScore[] = [];
 
@@ -2076,7 +2156,8 @@ export class SchedulerService {
         shift,
         existingAssignments,
         options,
-        preferences
+        preferences,
+        restaurantPreferences
       );
 
       // Penalizza se l'assegnazione bloccherebbe requisiti futuri critici

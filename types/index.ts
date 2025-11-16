@@ -2,9 +2,11 @@ export type EmployeeRole =
   | 'cuoco' 
   | 'aiuto_cuoco' 
   | 'pizzaiolo' 
+  | 'aiutopizzaiolo'  // aggiunto per supportare ruoli dallo spreadsheet
   | 'lavapiatti' 
   | 'cameriere' 
   | 'aiuto_cameriere'
+  | 'caposala'  // aggiunto per supportare ruoli dallo spreadsheet
 
 export type DayOfWeek = 
   | 'lunedi' 
@@ -20,11 +22,12 @@ export type Shift = 'pranzo' | 'cena'
 export interface Employee {
   id: string
   name: string
-  role: EmployeeRole
+  role: EmployeeRole // Mantenuto per retrocompatibilità
+  roles: EmployeeRole[] // Array di ruoli (fino a 3 come nello spreadsheet)
   availability: number // Giorni disponibili a settimana (calcolato da availableDays per retrocompatibilità)
   availableDays: DayOfWeek[] // Giorni della settimana disponibili (vuoto = tutti i giorni)
   availableDates: string[] // Date specifiche disponibili (formato YYYY-MM-DD) - per disponibilità temporanee
-  restaurants: string[] // ID ristoranti (vuoto = tutti)
+  restaurants: string[] // ID ristoranti (vuoto = tutti) - mantenuto per retrocompatibilità
   createdAt?: Date
   updatedAt?: Date
 }
@@ -81,6 +84,15 @@ export interface EmployeePreference {
   employeeId1: string
   employeeId2: string
   weight: number // Default 1.0, >1.0 = preferenza forte
+  createdAt?: Date
+  updatedAt?: Date
+}
+
+export interface EmployeeRestaurantPreference {
+  id: string
+  employeeId: string
+  restaurantId: string
+  weight: number // Default 1.0 (X), 3.0 = forte preferenza (XXX)
   createdAt?: Date
   updatedAt?: Date
 }

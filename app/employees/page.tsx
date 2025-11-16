@@ -7,14 +7,17 @@ import WeekCalendar from '@/components/WeekCalendar'
 import MonthCalendar from '@/components/MonthCalendar'
 import EmployeeConflicts from '@/components/EmployeeConflicts'
 import EmployeePreferences from '@/components/EmployeePreferences'
+import EmployeeRestaurantPreferences from '@/components/EmployeeRestaurantPreferences'
 
 const ROLES: EmployeeRole[] = [
   'cuoco',
   'aiuto_cuoco',
   'pizzaiolo',
+  'aiutopizzaiolo',
   'lavapiatti',
   'cameriere',
   'aiuto_cameriere',
+  'caposala',
 ]
 
 export default function EmployeesPage() {
@@ -24,6 +27,7 @@ export default function EmployeesPage() {
   const [formData, setFormData] = useState({
     name: '',
     role: 'cuoco' as EmployeeRole,
+    roles: [] as EmployeeRole[],
     availability: 5,
     availableDays: [] as DayOfWeek[],
     availableDates: [] as string[],
@@ -33,6 +37,7 @@ export default function EmployeesPage() {
   const [restaurants, setRestaurants] = useState<{ id: string; name: string }[]>([])
   const [showConflicts, setShowConflicts] = useState<Employee | null>(null)
   const [showPreferences, setShowPreferences] = useState<Employee | null>(null)
+  const [showRestaurantPreferences, setShowRestaurantPreferences] = useState<Employee | null>(null)
 
   useEffect(() => {
     loadData()
@@ -75,6 +80,7 @@ export default function EmployeesPage() {
     setFormData({
       name: employee.name,
       role: employee.role,
+      roles: (employee as any).roles || [employee.role],
       availability: employee.availability,
       availableDays: employee.availableDays || [],
       availableDates: employee.availableDates || [],
@@ -97,6 +103,7 @@ export default function EmployeesPage() {
     setFormData({
       name: '',
       role: 'cuoco',
+      roles: [],
       availability: 5,
       availableDays: [],
       availableDates: [],
@@ -153,19 +160,47 @@ export default function EmployeesPage() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Ruolo
+              Ruoli (fino a 3, come nello spreadsheet)
             </label>
-            <select
-              value={formData.role}
-              onChange={e => setFormData({ ...formData, role: e.target.value as EmployeeRole })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              {ROLES.map(role => (
-                <option key={role} value={role}>
-                  {role.replace('_', ' ')}
-                </option>
+            <div className="space-y-2">
+              {[0, 1, 2].map(index => (
+                <select
+                  key={index}
+                  value={formData.roles[index] || ''}
+                  onChange={e => {
+                    const newRoles = [...formData.roles]
+                    if (e.target.value) {
+                      newRoles[index] = e.target.value as EmployeeRole
+                      // Rimuovi duplicati
+                      const uniqueRoles = Array.from(new Set(newRoles.filter(r => r)))
+                      setFormData({ 
+                        ...formData, 
+                        roles: uniqueRoles.slice(0, 3),
+                        role: uniqueRoles[0] || formData.role // Mantieni il primo per retrocompatibilità
+                      })
+                    } else {
+                      newRoles.splice(index, 1)
+                      setFormData({ 
+                        ...formData, 
+                        roles: newRoles.filter(r => r),
+                        role: newRoles[0] || formData.role
+                      })
+                    }
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">{index === 0 ? 'Ruolo principale (obbligatorio)' : `Ruolo ${index + 1} (opzionale)`}</option>
+                  {ROLES.filter(role => !formData.roles.includes(role) || formData.roles[index] === role).map(role => (
+                    <option key={role} value={role}>
+                      {role.replace('_', ' ')}
+                    </option>
+                  ))}
+                </select>
               ))}
-            </select>
+            </div>
+            <p className="mt-2 text-xs text-gray-500">
+              Seleziona fino a 3 ruoli per questo dipendente. Il primo ruolo è obbligatorio.
+            </p>
           </div>
 
           <div className="space-y-4">
@@ -283,7 +318,16 @@ export default function EmployeesPage() {
                     {emp.name}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {emp.role.replace('_', ' ')}
+                    <div className="flex flex-wrap gap-1">
+                      {((emp as any).roles && (emp as any).roles.length > 0 
+                        ? (emp as any).roles 
+                        : [emp.role]
+                      ).map((role: string, idx: number) => (
+                        <span key={idx} className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+                          {role.replace('_', ' ')}
+                        </span>
+                      ))}
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {emp.availableDays && emp.availableDays.length > 0 
@@ -325,9 +369,16 @@ export default function EmployeesPage() {
                       <button
                         onClick={() => setShowPreferences(emp)}
                         className="text-green-600 hover:text-green-900"
-                        title="Gestisci preferenze"
+                        title="Gestisci preferenze dipendenti"
                       >
                         ✓ Preferenze
+                      </button>
+                      <button
+                        onClick={() => setShowRestaurantPreferences(emp)}
+                        className="text-purple-600 hover:text-purple-900"
+                        title="Gestisci preferenze ristoranti"
+                      >
+                        🏢 Ristoranti
                       </button>
                       <button
                         onClick={() => handleDelete(emp.id)}
@@ -362,6 +413,13 @@ export default function EmployeesPage() {
           employee={showPreferences}
           allEmployees={employees}
           onClose={() => setShowPreferences(null)}
+        />
+      )}
+      {showRestaurantPreferences && (
+        <EmployeeRestaurantPreferences
+          employee={showRestaurantPreferences}
+          allRestaurants={restaurants.map(r => ({ id: r.id, name: r.name }))}
+          onClose={() => setShowRestaurantPreferences(null)}
         />
       )}
     </div>

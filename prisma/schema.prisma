@@ -10,19 +10,21 @@ datasource db {
 model Employee {
   id             String   @id @default(cuid())
   name           String
-  role           String // 'cuoco' | 'aiuto_cuoco' | 'pizzaiolo' | 'lavapiatti' | 'cameriere' | 'aiuto_cameriere'
+  role           String // 'cuoco' | 'aiuto_cuoco' | 'pizzaiolo' | 'lavapiatti' | 'cameriere' | 'aiuto_cameriere' (mantenuto per retrocompatibilità)
+  roles          String[] // array di ruoli: ['pizzaiolo', 'caposala', ...] (fino a 3 ruoli come nello spreadsheet)
   availability   Int // giorni disponibili a settimana (mantenuto per retrocompatibilità, calcolato da availableDays)
   availableDays  String[] // array di giorni disponibili: ['lunedi', 'martedi', ...] (vuoto = tutti i giorni)
   availableDates String[] // array di date specifiche disponibili: ['2024-11-15', '2024-11-16', ...] (formato YYYY-MM-DD)
-  restaurants    String[] // array di ID ristoranti (vuoto = tutti)
+  restaurants    String[] // array di ID ristoranti (vuoto = tutti) - mantenuto per retrocompatibilità, preferenze gestite da EmployeeRestaurantPreference
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  assignments  ShiftAssignment[]
-  conflicts1   EmployeeConflict[]   @relation("EmployeeConflicts1")
-  conflicts2   EmployeeConflict[]   @relation("EmployeeConflicts2")
-  preferences1 EmployeePreference[] @relation("EmployeePreferences1")
-  preferences2 EmployeePreference[] @relation("EmployeePreferences2")
+  assignments              ShiftAssignment[]
+  conflicts1               EmployeeConflict[]          @relation("EmployeeConflicts1")
+  conflicts2               EmployeeConflict[]          @relation("EmployeeConflicts2")
+  preferences1             EmployeePreference[]        @relation("EmployeePreferences1")
+  preferences2             EmployeePreference[]        @relation("EmployeePreferences2")
+  restaurantPreferences    EmployeeRestaurantPreference[]
 
   @@index([role])
 }
@@ -33,8 +35,9 @@ model Restaurant {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  requirements ShiftRequirement[]
-  assignments  ShiftAssignment[]
+  requirements          ShiftRequirement[]
+  assignments           ShiftAssignment[]
+  employeePreferences   EmployeeRestaurantPreference[]
 }
 
 model ShiftRequirement {
@@ -97,6 +100,21 @@ model EmployeePreference {
   @@unique([employeeId1, employeeId2])
   @@index([employeeId1])
   @@index([employeeId2])
+}
+
+model EmployeeRestaurantPreference {
+  id          String     @id @default(cuid())
+  employeeId  String
+  employee    Employee   @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  restaurantId String
+  restaurant  Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  weight      Float      @default(1.0) // Peso della preferenza (1.0 = normale/X, 3.0 = forte preferenza/XXX)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@unique([employeeId, restaurantId])
+  @@index([employeeId])
+  @@index([restaurantId])
 }
 
 model SchedulingParameter {

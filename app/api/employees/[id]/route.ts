@@ -34,23 +34,56 @@ export async function PUT(
 ) {
   try {
     const body = await request.json()
-    const { name, role, availability, availableDays, availableDates, restaurants } = body
+    const { name, role, roles, availability, availableDays, availableDates, restaurants } = body
 
-    // Validazione
-    if (role) {
-      const validRoles: EmployeeRole[] = [
-        'cuoco',
-        'aiuto_cuoco',
-        'pizzaiolo',
-        'lavapiatti',
-        'cameriere',
-        'aiuto_cameriere',
-      ]
+    const validRoles: EmployeeRole[] = [
+      'cuoco',
+      'aiuto_cuoco',
+      'pizzaiolo',
+      'aiutopizzaiolo',
+      'lavapiatti',
+      'cameriere',
+      'aiuto_cameriere',
+      'caposala',
+    ]
+
+    // Gestisci ruoli multipli
+    let updateData: any = {}
+    
+    if (roles !== undefined) {
+      if (Array.isArray(roles)) {
+        if (roles.length > 3) {
+          return NextResponse.json(
+            { error: 'Maximum 3 roles allowed' },
+            { status: 400 }
+          )
+        }
+        for (const r of roles) {
+          if (!validRoles.includes(r as EmployeeRole)) {
+            return NextResponse.json(
+              { error: `Invalid role: ${r}` },
+              { status: 400 }
+            )
+          }
+        }
+        updateData.roles = roles
+        updateData.role = roles.length > 0 ? roles[0] : null // Mantieni il primo ruolo per retrocompatibilità
+      }
+    } else if (role !== undefined) {
       if (!validRoles.includes(role)) {
         return NextResponse.json(
           { error: 'Invalid role' },
           { status: 400 }
         )
+      }
+      updateData.role = role
+      // Se roles non è specificato, mantieni i ruoli esistenti o usa solo role
+      const existing = await prisma.employee.findUnique({ where: { id: params.id } })
+      if (existing && existing.roles && existing.roles.length > 0) {
+        // Mantieni i ruoli esistenti ma aggiorna il primo
+        updateData.roles = [role, ...existing.roles.slice(1)].filter((r, i, arr) => arr.indexOf(r) === i)
+      } else {
+        updateData.roles = [role]
       }
     }
 
@@ -70,7 +103,7 @@ export async function PUT(
       where: { id: params.id },
       data: {
         ...(name && { name }),
-        ...(role && { role }),
+        ...updateData,
         ...(calculatedAvailability !== undefined && { availability: calculatedAvailability }),
         ...(availableDays !== undefined && { availableDays }),
         ...(availableDates !== undefined && { availableDates }),
